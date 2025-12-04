@@ -158,19 +158,6 @@ export default function Login() {
             <View className="flex-1 h-px bg-white/20" />
           </View>
 
-          {/* Social Buttons */}
-          <View className="flex-row gap-4 mb-8">
-            <TouchableOpacity className="flex-1 border border-white/20 rounded-lg py-4 items-center justify-center">
-              <GoogleIcon size={20} />
-            </TouchableOpacity>
-            <TouchableOpacity className="flex-1 border border-white/20 rounded-lg py-4 items-center justify-center">
-              <AppleIcon size={20} />
-            </TouchableOpacity>
-            <TouchableOpacity className="flex-1 border border-white/20 rounded-lg py-4 items-center justify-center">
-              <FacebookIcon size={20} />
-            </TouchableOpacity>
-          </View>
-
           {/* Register Link */}
           <View className="flex-row justify-center items-center">
             <Text className="text-white/60 text-sm">

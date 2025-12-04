@@ -1,9 +1,12 @@
-import { View, Text, TextInput, TouchableOpacity, Alert, ActivityIndicator, ScrollView, KeyboardAvoidingView, Platform, Switch, Image } from "react-native";
-import React, { useState, useEffect } from 'react';
+
+
+import { View, Text, TouchableOpacity, Alert, ActivityIndicator, ScrollView, KeyboardAvoidingView, Platform, Image } from "react-native";
+import React, { useState } from 'react';
 import { useAuth } from "../../context/AuthContext";
 import { useProfile } from "../../context/ProfileContext";
 import * as ImagePicker from 'expo-image-picker';
 import Svg, { Path, Circle} from 'react-native-svg';
+import { useRouter } from "expo-router";
 
 
 const CameraIcon = ({ size = 20 }: { size?: number }) => (
@@ -25,69 +28,12 @@ const LogoutIcon = ({ size = 20 }: { size?: number }) => (
   </Svg>
 );
 
-const GlobeIcon = ({ size = 20 }: { size?: number }) => (
-  <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
-    <Circle cx="12" cy="12" r="10" stroke="white" strokeWidth="2"/>
-    <Path d="M2 12h20M12 2a15.3 15.3 0 014 10 15.3 15.3 0 01-4 10 15.3 15.3 0 01-4-10 15.3 15.3 0 014-10z" stroke="white" strokeWidth="2" strokeLinecap="round"/>
-  </Svg>
-);
-
 export default function ProfileScreen() {
     const { user, signOut } = useAuth();
-    const { profile, updateProfile, uploadAvatar, loading: profileLoading } = useProfile();
-
-    const [name, setName] = useState('');
-    const [nickname, setNickname] = useState('');
-    const [bio, setBio] = useState('');
-    const [isPublic, setIsPublic] = useState(true);
-    const [preferences, setPreferences] = useState('');
-    const [avatarUrl, setAvatarUrl] = useState('');
+    const { profile, uploadAvatar, uploadBanner, loading: profileLoading } = useProfile();
+    const router = useRouter();
     
     const [isSaving, setIsSaving] = useState(false);
-    const [isEditing, setIsEditing] = useState(false);
-
-    useEffect(() => {
-        if (profile) {
-            setName(profile.name || '');
-            setNickname(profile.nickname || '');
-            setBio(profile.bio || '');
-            setIsPublic(profile.is_public);
-            setPreferences(JSON.stringify(profile.preferences || {}, null, 2));
-            setAvatarUrl(profile.avatar_url || '');
-        }
-    }, [profile]);
-
-    const handleUpdateProfile = async () => {
-        if (!name.trim()) {
-            Alert.alert('Atenção', 'O nome é obrigatório');
-            return;
-        }
-
-        let parsedPrefs;
-        try {
-            parsedPrefs = JSON.parse(preferences);
-        } catch (e) {
-            Alert.alert('Erro', 'As preferências não são um JSON válido.');
-            return;
-        }
-
-        setIsSaving(true);
-        const { error } = await updateProfile({
-            name,
-            nickname,
-            bio,
-            is_public: isPublic,
-            preferences: parsedPrefs,
-        });
-
-        if (error) {
-            Alert.alert('Erro', error.message);
-        } else {
-            Alert.alert('Sucesso', 'Perfil atualizado com sucesso!');
-            setIsEditing(false);
-        }
-        setIsSaving(false);
-    };
 
     const handlePickAvatar = async () => {
         const result = await ImagePicker.launchImageLibraryAsync({
@@ -109,16 +55,25 @@ export default function ProfileScreen() {
         }
     };
 
-    const handleCancel = () => {
-        if (profile) {
-            setName(profile.name || '');
-            setNickname(profile.nickname || '');
-            setBio(profile.bio || '');
-            setIsPublic(profile.is_public);
-            setPreferences(JSON.stringify(profile.preferences || {}, null, 2));
+    const handlePickBanner = async () => {
+        const result = await ImagePicker.launchImageLibraryAsync({
+            mediaTypes: ImagePicker.MediaTypeOptions.Images,
+            allowsEditing: true,
+            aspect: [16, 9],
+            quality: 0.7,
+        });
+
+        if (!result.canceled) {
+            setIsSaving(true);
+            const { error } = await uploadBanner(result.assets[0]);
+            if (error) {
+                Alert.alert('Erro no Upload', error.message);
+            } else {
+                Alert.alert('Sucesso', 'Banner atualizado!');
+            }
+            setIsSaving(false);
         }
-        setIsEditing(false);
-    };
+    }
 
     const handleSignOut = () => {
         Alert.alert(
@@ -132,8 +87,8 @@ export default function ProfileScreen() {
     };
 
     const getInitials = () => {
-        if (!name) return '?';
-        const names = name.trim().split(' ');
+        if (!profile?.name) return '?';
+        const names = profile.name.trim().split(' ');
         if (names.length === 1) return names[0][0].toUpperCase();
         return (names[0][0] + names[names.length - 1][0]).toUpperCase();
     };
@@ -157,17 +112,35 @@ export default function ProfileScreen() {
                 contentContainerStyle={{ flexGrow: 1 }}
                 keyboardShouldPersistTaps="handled"
             >
-                <View className="flex-1 px-8 pt-16 pb-8">
+                <View className="flex-1">
+                    {/* Banner Section */}
+                    <TouchableOpacity onPress={handlePickBanner} disabled={isSaving} className="relative h-48 bg-black/20">
+                        {profile?.banner_url ? (
+                            <Image source={{ uri: profile.banner_url }} className="w-full h-full" resizeMode="cover" />
+                        ) : (
+                            <View className="w-full h-full justify-center items-center">
+                                <Text className="text-white/40">Adicionar um banner</Text>
+                            </View>
+                        )}
+                        <View className="absolute top-4 right-4 w-9 h-9 rounded-full bg-white/80 items-center justify-center border-2 border-black/50">
+                            {isSaving ? (
+                                <ActivityIndicator size="small" color="#000" />
+                            ) : (
+                                <CameraIcon size={18} />
+                            )}
+                        </View>
+                    </TouchableOpacity>
+
                     {/* Avatar Section */}
-                    <View className="items-center mb-12">
+                    <View className="items-center -mt-14 mb-8">
                         <TouchableOpacity 
                             onPress={handlePickAvatar} 
                             disabled={isSaving}
                             className="relative mb-4"
                         >
-                            <View className="w-28 h-28 rounded-full border-2 border-white/20 items-center justify-center bg-black overflow-hidden">
-                                {avatarUrl ? (
-                                    <Image source={{ uri: avatarUrl }} className="w-full h-full" />
+                            <View className="w-28 h-28 rounded-full border-4 border-black bg-black items-center justify-center overflow-hidden">
+                                {profile?.avatar_url ? (
+                                    <Image source={{ uri: profile.avatar_url }} className="w-full h-full" />
                                 ) : (
                                     <Text className="text-white text-4xl font-bold">
                                         {getInitials()}
@@ -175,7 +148,6 @@ export default function ProfileScreen() {
                                 )}
                             </View>
                             
-                            {/* Camera Badge */}
                             <View className="absolute bottom-0 right-0 w-9 h-9 rounded-full bg-white items-center justify-center border-2 border-black">
                                 {(isSaving && profileLoading) ? (
                                     <ActivityIndicator size="small" color="#000" />
@@ -186,12 +158,12 @@ export default function ProfileScreen() {
                         </TouchableOpacity>
 
                         <Text className="text-white text-2xl font-bold mb-1">
-                            {name || 'Seu Nome'}
+                            {profile?.name || 'Seu Nome'}
                         </Text>
                         
-                        {nickname && (
+                        {profile?.nickname && (
                             <Text className="text-white/60 text-base mb-2">
-                                @{nickname}
+                                @{profile.nickname}
                             </Text>
                         )}
                         
@@ -200,10 +172,10 @@ export default function ProfileScreen() {
                         </Text>
                     </View>
 
-                    {/* Edit Button */}
-                    {!isEditing && (
+                    <View className="px-8 pb-8">
+                        {/* Edit Button */}
                         <TouchableOpacity
-                            onPress={() => setIsEditing(true)}
+                            onPress={() => router.push('/(tabs)/edit-profile')}
                             className="flex-row items-center justify-center py-3 mb-8 border border-white/20 rounded-lg"
                         >
                             <EditIcon size={16} />
@@ -211,154 +183,47 @@ export default function ProfileScreen() {
                                 Editar Perfil
                             </Text>
                         </TouchableOpacity>
-                    )}
 
-                    {/* Profile URL (Read-only) */}
-                    <View className="mb-6">
-                        <Text className="text-white/60 text-sm mb-2">
-                            URL do Perfil
-                        </Text>
-                        <View className="border border-white/20 rounded-lg px-4 py-3">
-                            <Text className="text-white/40 text-base">
-                                /{profile?.slug || '...'}
+                        {/* Bio */}
+                        {profile?.bio && (
+                            <View className="mb-6">
+                                <Text className="text-white/60 text-sm mb-2">
+                                    Sobre você
+                                </Text>
+                                <View className="border border-white/20 rounded-lg p-4">
+                                    <Text className="text-white text-base">
+                                        {profile.bio}
+                                    </Text>
+                                </View>
+                            </View>
+                        )}
+
+                        {/* Profile URL (Read-only) */}
+                        <View className="mb-6">
+                            <Text className="text-white/60 text-sm mb-2">
+                                URL do Perfil
                             </Text>
-                        </View>
-                    </View>
-
-                    {/* Name */}
-                    <View className="mb-6">
-                        <Text className="text-white/60 text-sm mb-2">
-                            Nome completo
-                        </Text>
-                        <View className={`border rounded-lg ${isEditing ? 'border-white/40' : 'border-white/20'}`}>
-                            <TextInput
-                                placeholder="Seu nome"
-                                placeholderTextColor="#666666"
-                                value={name}
-                                onChangeText={setName}
-                                editable={isEditing}
-                                className="px-4 py-3 text-white text-base"
-                            />
-                        </View>
-                    </View>
-
-                    {/* Nickname */}
-                    <View className="mb-6">
-                        <Text className="text-white/60 text-sm mb-2">
-                            Apelido
-                        </Text>
-                        <View className={`border rounded-lg flex-row items-center ${isEditing ? 'border-white/40' : 'border-white/20'}`}>
-                            <Text className="text-white/40 pl-4 text-base">@</Text>
-                            <TextInput
-                                placeholder="apelido"
-                                placeholderTextColor="#666666"
-                                value={nickname}
-                                onChangeText={setNickname}
-                                editable={isEditing}
-                                autoCapitalize="none"
-                                className="flex-1 px-2 py-3 text-white text-base"
-                            />
-                        </View>
-                    </View>
-
-                    {/* Bio */}
-                    <View className="mb-6">
-                        <Text className="text-white/60 text-sm mb-2">
-                            Sobre você
-                        </Text>
-                        <View className={`border rounded-lg ${isEditing ? 'border-white/40' : 'border-white/20'}`}>
-                            <TextInput
-                                placeholder="Conte um pouco sobre você..."
-                                placeholderTextColor="#666666"
-                                value={bio}
-                                onChangeText={setBio}
-                                editable={isEditing}
-                                multiline
-                                numberOfLines={4}
-                                textAlignVertical="top"
-                                className="px-4 py-3 text-white text-base min-h-[100px]"
-                            />
-                        </View>
-                    </View>
-
-                    {/* Public Profile Toggle */}
-                    <View className="flex-row items-center justify-between mb-6 p-4 border border-white/20 rounded-lg">
-                        <View className="flex-row items-center flex-1">
-                            <GlobeIcon size={20} />
-                            <View className="ml-3 flex-1">
-                                <Text className="text-white font-medium">Perfil Público</Text>
-                                <Text className="text-white/40 text-xs mt-1">
-                                    Outros usuários poderão ver seu perfil
+                            <View className="border border-white/20 rounded-lg px-4 py-3">
+                                <Text className="text-white/40 text-base">
+                                    /{profile?.slug || '...'}
                                 </Text>
                             </View>
                         </View>
-                        <Switch
-                            trackColor={{ false: '#333333', true: '#ffffff' }}
-                            thumbColor={isPublic ? '#000000' : '#666666'}
-                            ios_backgroundColor="#333333"
-                            onValueChange={setIsPublic}
-                            value={isPublic}
-                            disabled={!isEditing}
-                        />
+
+                        {/* Divider */}
+                        <View className="h-px bg-white/20 my-8" />
+
+                        {/* Logout Button */}
+                        <TouchableOpacity
+                            onPress={handleSignOut}
+                            className="flex-row items-center justify-center py-4 border border-white/20 rounded-lg"
+                        >
+                            <LogoutIcon size={20} />
+                            <Text className="text-white font-bold ml-2">
+                                Sair da Conta
+                            </Text>
+                        </TouchableOpacity>
                     </View>
-
-                    {/* Preferences */}
-                    <View className="mb-6">
-                        <Text className="text-white/60 text-sm mb-2">
-                            Preferências (JSON)
-                        </Text>
-                        <View className={`border rounded-lg ${isEditing ? 'border-white/40' : 'border-white/20'}`}>
-                            <TextInput
-                                placeholder='{"theme": "dark"}'
-                                placeholderTextColor="#666666"
-                                value={preferences}
-                                onChangeText={setPreferences}
-                                editable={isEditing}
-                                multiline
-                                autoCapitalize="none"
-                                textAlignVertical="top"
-                                className="px-4 py-3 text-white text-base min-h-[100px] font-mono"
-                            />
-                        </View>
-                    </View>
-
-                    {/* Action Buttons */}
-                    {isEditing && (
-                        <View className="flex-row gap-3 mb-6">
-                            <TouchableOpacity
-                                onPress={handleCancel}
-                                disabled={isSaving}
-                                className="flex-1 border border-white/20 rounded-lg py-3"
-                            >
-                                <Text className="text-white text-center font-medium">
-                                    Cancelar
-                                </Text>
-                            </TouchableOpacity>
-                            <TouchableOpacity
-                                onPress={handleUpdateProfile}
-                                disabled={isSaving}
-                                className={`flex-1 rounded-lg py-3 ${isSaving ? 'bg-white/20' : 'bg-white'}`}
-                            >
-                                <Text className={`text-center font-bold ${isSaving ? 'text-white' : 'text-black'}`}>
-                                    {isSaving ? 'Salvando...' : 'Salvar'}
-                                </Text>
-                            </TouchableOpacity>
-                        </View>
-                    )}
-
-                    {/* Divider */}
-                    <View className="h-px bg-white/20 my-8" />
-
-                    {/* Logout Button */}
-                    <TouchableOpacity
-                        onPress={handleSignOut}
-                        className="flex-row items-center justify-center py-4 border border-white/20 rounded-lg"
-                    >
-                        <LogoutIcon size={20} />
-                        <Text className="text-white font-bold ml-2">
-                            Sair da Conta
-                        </Text>
-                    </TouchableOpacity>
                 </View>
             </ScrollView>
         </KeyboardAvoidingView>

@@ -12,6 +12,7 @@ export default function AppLayout() {
   return (
     <Stack>
       <Stack.Screen name="profile" options={{ headerShown: false }} />
+      <Stack.Screen name="edit-profile" options={{ headerShown: false, presentation: 'modal' }} />
     </Stack>
   );
 }

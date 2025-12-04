@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { useAuth } from './AuthContext';
+import { useStorage } from '../hooks/useStorage';
 import { supabaseUrl, supabaseAnonKey } from '../lib/supabase';
 import { Tables } from '../lib/database.types';
 import { ImagePickerAsset } from 'expo-image-picker';
@@ -9,6 +10,7 @@ type ProfileData = {
   loading: boolean;
   updateProfile: (updatedInfo: Partial<Tables<'profiles'>>) => Promise<{ error?: Error }>;
   uploadAvatar: (asset: ImagePickerAsset) => Promise<{ error?: Error }>;
+  uploadBanner: (asset: ImagePickerAsset) => Promise<{ error?: Error }>;
 };
 
 const ProfileContext = createContext<ProfileData>({
@@ -16,6 +18,7 @@ const ProfileContext = createContext<ProfileData>({
   loading: true,
   updateProfile: async () => ({}),
   uploadAvatar: async () => ({}),
+  uploadBanner: async () => ({}),
 });
 
 export const useProfile = () => {
@@ -71,62 +74,64 @@ export const ProfileProvider = ({ children }: { children: React.ReactNode }) => 
     }
   };
 
+  const { upload: uploadStorage, loading: storageLoading } = useStorage();
+
   const uploadAvatar = async (asset: ImagePickerAsset) => {
-    if (!user || !session) {
-      return { error: new Error('User not authenticated') };
-    }
-  
+    setLoading(true);
     try {
-      const file = asset;
-      const fileName = `${user.id}/${new Date().getTime()}.${file.uri.split('.').pop()}`;
-      const formData = new FormData();
-      
-      // The asset URI needs to be adapted for FormData
-      const fileData: any = {
-        uri: file.uri,
-        name: fileName,
-        type: file.mimeType ?? 'image/jpeg',
-      };
+      const { publicUrl, error } = await uploadStorage(asset, { bucket: 'avatars' });
 
-      formData.append('file', fileData);
-  
-      const uploadResponse = await fetch(`${supabaseUrl}/storage/v1/object/avatars/${fileName}`, {
-        method: 'POST',
-        headers: {
-          'apikey': supabaseAnonKey,
-          'Authorization': `Bearer ${session.access_token}`,
-        },
-        body: formData,
-      });
-  
-      const uploadData = await uploadResponse.json();
-  
-      if (!uploadResponse.ok) {
-        throw new Error(uploadData.message || 'Failed to upload image.');
+      if (error) {
+        throw error;
       }
-      
-      // Construct the public URL
-      const publicUrl = `${supabaseUrl}/storage/v1/object/public/avatars/${fileName}`;
 
-      // Update the profile with the new avatar URL
-      await updateProfile({ avatar_url: publicUrl });
+      if (publicUrl) {
+        await updateProfile({ avatar_url: publicUrl });
+      }
 
-      // After updating, refresh the profile data from the server
-      if(refreshProfile) {
+      if (refreshProfile) {
         await refreshProfile();
       }
 
       return {};
     } catch (error) {
       return { error: error instanceof Error ? error : new Error(String(error)) };
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const uploadBanner = async (asset: ImagePickerAsset) => {
+    setLoading(true);
+    try {
+      const { publicUrl, error } = await uploadStorage(asset, { bucket: 'banners' });
+
+      if (error) {
+        throw error;
+      }
+
+      if (publicUrl) {
+        await updateProfile({ banner_url: publicUrl });
+      }
+
+      if (refreshProfile) {
+        await refreshProfile();
+      }
+
+      return {};
+    } catch (error) {
+      return { error: error instanceof Error ? error : new Error(String(error)) };
+    } finally {
+      setLoading(false);
     }
   };
   
   const value = {
     profile,
-    loading,
+    loading: loading || storageLoading,
     updateProfile,
     uploadAvatar,
+    uploadBanner,
   };
 
   return (
