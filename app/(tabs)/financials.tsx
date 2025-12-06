@@ -121,9 +121,9 @@ export default function FinancialsScreen() {
                 {/* FAB to add transaction */}
                 <TouchableOpacity
                     onPress={handlePresentTransactionModal}
-                    className="absolute bottom-6 right-6 bg-violet-500 w-16 h-16 rounded-full justify-center items-center shadow-lg"
+                    className="absolute bottom-6 right-6 bg-zinc-50 w-16 h-16 rounded-full justify-center items-center shadow-lg"
                 >
-                    <PlusIcon />
+                    <PlusIcon color="black" />
                 </TouchableOpacity>
 
                 {/* Transaction Form Modal */}

@@ -23,6 +23,12 @@ const ArrowDownIcon = ({ size = 20 }: { size?: number }) => (
   </Svg>
 );
 
+const PlusIcon = ({ size = 16 }: { size?: number }) => (
+  <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+    <Path d="M12 5v14M5 12h14" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+  </Svg>
+);
+
 const TransactionForm: React.FC<TransactionFormProps> = ({ transaction, onSave, onClose }) => {
     const { accounts, categories, addTransaction, updateTransaction, addAccount, addCategory } = useFinancials();
     const [isEditing, setIsEditing] = useState(false);
@@ -71,7 +77,7 @@ const TransactionForm: React.FC<TransactionFormProps> = ({ transaction, onSave, 
 
     const handleCreateCategory = async () => {
         if (!newCategoryName.trim()) {
-            Alert.alert('Atenção', 'O nome da nova categoria não pode ser vazio.');
+            Alert.alert('Atenção', 'O nome da nova categoria não pode ser vazio');
             return;
         }
         try {
@@ -91,7 +97,7 @@ const TransactionForm: React.FC<TransactionFormProps> = ({ transaction, onSave, 
 
     const handleCreateAccount = async () => {
         if (!newAccountName.trim()) {
-            Alert.alert('Atenção', 'Nome da nova conta não pode ser vazio.');
+            Alert.alert('Atenção', 'Nome da nova conta não pode ser vazio');
             return;
         }
         try {
@@ -115,7 +121,7 @@ const TransactionForm: React.FC<TransactionFormProps> = ({ transaction, onSave, 
 
     const handleSave = async () => {
         if (!title || !amount || !accountId) {
-            Alert.alert('Atenção', 'Título, Valor e Conta são campos obrigatórios.');
+            Alert.alert('Atenção', 'Título, Valor e Conta são campos obrigatórios');
             return;
         }
 
@@ -216,34 +222,45 @@ const TransactionForm: React.FC<TransactionFormProps> = ({ transaction, onSave, 
                 <View className="mb-6">
                     <View className="flex-row justify-between items-center mb-2">
                         <Text className="text-white/60 text-sm">Conta</Text>
-                        <TouchableOpacity onPress={() => setShowNewAccountInput(!showNewAccountInput)}>
-                            <Text className="text-indigo-400 text-sm">{showNewAccountInput ? 'Cancelar' : 'Nova Conta'}</Text>
+                        <TouchableOpacity 
+                            onPress={() => setShowNewAccountInput(!showNewAccountInput)}
+                            className="flex-row items-center"
+                        >
+                            <PlusIcon size={14} />
+                            <Text className="text-white text-sm ml-1">
+                                {showNewAccountInput ? 'Cancelar' : 'Nova'}
+                            </Text>
                         </TouchableOpacity>
                     </View>
 
                     {showNewAccountInput ? (
-                        <View className="border border-white/20 rounded-lg p-2">
+                        <View className="border border-white/20 rounded-lg p-4">
                             <TextInput
-                                className="text-white px-2 py-2 text-base mb-2"
+                                className="text-white px-4 py-3 text-base mb-3 border border-white/20 rounded-lg"
                                 placeholder="Nome da nova conta"
                                 placeholderTextColor="#666666"
                                 value={newAccountName}
                                 onChangeText={setNewAccountName}
                             />
-                            <Picker
-                                selectedValue={newAccountType}
-                                onValueChange={(itemValue) => setNewAccountType(itemValue)}
-                                style={{ color: Platform.OS === 'ios' ? '#FFFFFF' : '#FFFFFF', backgroundColor: 'transparent', marginBottom: 8 }}
-                                dropdownIconColor="#FFFFFF"
-                            >
-                                <Picker.Item label="Conta Corrente" value="checking" color={Platform.OS === 'ios' ? '#FFFFFF' : '#000000'} />
-                                <Picker.Item label="Poupança" value="savings" color={Platform.OS === 'ios' ? '#FFFFFF' : '#000000'} />
-                                <Picker.Item label="Cartão de Crédito" value="credit_card" color={Platform.OS === 'ios' ? '#FFFFFF' : '#000000'} />
-                                <Picker.Item label="Investimento" value="investment" color={Platform.OS === 'ios' ? '#FFFFFF' : '#000000'} />
-                                <Picker.Item label="Dinheiro Físico" value="cash" color={Platform.OS === 'ios' ? '#FFFFFF' : '#000000'} />
-                            </Picker>
-                            <TouchableOpacity onPress={handleCreateAccount} className="bg-indigo-600 rounded-lg py-3">
-                                <Text className="text-white text-center font-bold text-base">Salvar Conta</Text>
+                            
+                            <Text className="text-white/60 text-xs mb-2">Tipo de Conta</Text>
+                            <View className="border border-white/20 rounded-lg overflow-hidden mb-3">
+                                <Picker
+                                    selectedValue={newAccountType}
+                                    onValueChange={(itemValue) => setNewAccountType(itemValue)}
+                                    style={{ color: '#FFFFFF', backgroundColor: 'transparent' }}
+                                    dropdownIconColor="#FFFFFF"
+                                >
+                                    <Picker.Item label="Conta Corrente" value="checking" color={Platform.OS === 'ios' ? '#FFFFFF' : '#000000'} />
+                                    <Picker.Item label="Poupança" value="savings" color={Platform.OS === 'ios' ? '#FFFFFF' : '#000000'} />
+                                    <Picker.Item label="Cartão de Crédito" value="credit_card" color={Platform.OS === 'ios' ? '#FFFFFF' : '#000000'} />
+                                    <Picker.Item label="Investimento" value="investment" color={Platform.OS === 'ios' ? '#FFFFFF' : '#000000'} />
+                                    <Picker.Item label="Dinheiro" value="cash" color={Platform.OS === 'ios' ? '#FFFFFF' : '#000000'} />
+                                </Picker>
+                            </View>
+                            
+                            <TouchableOpacity onPress={handleCreateAccount} className="bg-white rounded-lg py-3">
+                                <Text className="text-black text-center font-bold text-base">Criar Conta</Text>
                             </TouchableOpacity>
                         </View>
                     ) : (
@@ -251,13 +268,13 @@ const TransactionForm: React.FC<TransactionFormProps> = ({ transaction, onSave, 
                             <Picker
                                 selectedValue={accountId}
                                 onValueChange={(itemValue) => setAccountId(itemValue)}
-                                style={{ color: Platform.OS === 'ios' ? '#FFFFFF' : '#FFFFFF', backgroundColor: 'transparent' }}
+                                style={{ color: '#FFFFFF', backgroundColor: 'transparent' }}
                                 dropdownIconColor="#FFFFFF"
                             >
                                 {accounts.map(acc => (
                                     <Picker.Item 
                                         key={acc.id} 
-                                        label={`${acc.name} (${acc.type ? acc.type.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase()) : 'Geral'})`} 
+                                        label={`${acc.name}${acc.type ? ' • ' + acc.type.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase()) : ''}`} 
                                         value={acc.id} 
                                         color={Platform.OS === 'ios' ? '#FFFFFF' : '#000000'} 
                                     />
@@ -271,22 +288,28 @@ const TransactionForm: React.FC<TransactionFormProps> = ({ transaction, onSave, 
                 <View className="mb-6">
                     <View className="flex-row justify-between items-center mb-2">
                         <Text className="text-white/60 text-sm">Categoria</Text>
-                        <TouchableOpacity onPress={() => setShowNewCategoryInput(!showNewCategoryInput)}>
-                            <Text className="text-indigo-400 text-sm">{showNewCategoryInput ? 'Cancelar' : 'Nova Categoria'}</Text>
+                        <TouchableOpacity 
+                            onPress={() => setShowNewCategoryInput(!showNewCategoryInput)}
+                            className="flex-row items-center"
+                        >
+                            <PlusIcon size={14} />
+                            <Text className="text-white text-sm ml-1">
+                                {showNewCategoryInput ? 'Cancelar' : 'Nova'}
+                            </Text>
                         </TouchableOpacity>
                     </View>
 
                     {showNewCategoryInput ? (
-                        <View className="border border-white/20 rounded-lg p-2">
+                        <View className="border border-white/20 rounded-lg p-4">
                             <TextInput
-                                className="text-white px-2 py-2 text-base mb-2"
+                                className="text-white px-4 py-3 text-base mb-3 border border-white/20 rounded-lg"
                                 placeholder="Nome da nova categoria"
                                 placeholderTextColor="#666666"
                                 value={newCategoryName}
                                 onChangeText={setNewCategoryName}
                             />
-                            <TouchableOpacity onPress={handleCreateCategory} className="bg-indigo-600 rounded-lg py-3">
-                                <Text className="text-white text-center font-bold text-base">Salvar Categoria</Text>
+                            <TouchableOpacity onPress={handleCreateCategory} className="bg-white rounded-lg py-3">
+                                <Text className="text-black text-center font-bold text-base">Criar Categoria</Text>
                             </TouchableOpacity>
                         </View>
                     ) : (
@@ -294,7 +317,7 @@ const TransactionForm: React.FC<TransactionFormProps> = ({ transaction, onSave, 
                             <Picker
                                 selectedValue={categoryId}
                                 onValueChange={(itemValue) => setCategoryId(itemValue)}
-                                style={{ color: Platform.OS === 'ios' ? '#FFFFFF' : '#FFFFFF', backgroundColor: 'transparent' }}
+                                style={{ color: '#FFFFFF', backgroundColor: 'transparent' }}
                                 dropdownIconColor="#FFFFFF"
                                 enabled={filteredCategories.length > 0}
                             >
@@ -315,22 +338,29 @@ const TransactionForm: React.FC<TransactionFormProps> = ({ transaction, onSave, 
                     <Text className="text-white/60 text-sm mb-2">Notas</Text>
                     <View className="border border-white/20 rounded-lg">
                         <TextInput
-                            className="text-white px-4 py-4 text-base"
+                            className="text-white px-4 py-4 text-base min-h-[80px]"
                             placeholder="Adicione uma anotação..."
                             placeholderTextColor="#666666"
                             value={notes}
                             onChangeText={setNotes}
                             multiline
+                            textAlignVertical="top"
                         />
                     </View>
                 </View>
 
                 {/* Corporate Switch */}
-                <View className="flex-row justify-between items-center mb-8">
-                    <Text className="text-white/60 text-sm">É uma transação corporativa?</Text>
+                <View className="flex-row items-center justify-between mb-8 p-4 border border-white/20 rounded-lg">
+                    <View className="flex-1 mr-4">
+                        <Text className="text-white font-medium mb-1">Transação Corporativa</Text>
+                        <Text className="text-white/40 text-xs">
+                            Marque se for relacionada ao trabalho
+                        </Text>
+                    </View>
                     <Switch
-                        trackColor={{ false: "#3e3e3e", true: "#8b5cf6" }}
-                        thumbColor={isCorporate ? "#f4f3f4" : "#f4f3f4"}
+                        trackColor={{ false: '#333333', true: '#ffffff' }}
+                        thumbColor={isCorporate ? '#000000' : '#666666'}
+                        ios_backgroundColor="#333333"
                         onValueChange={setIsCorporate}
                         value={isCorporate}
                     />
