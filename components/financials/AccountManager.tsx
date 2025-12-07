@@ -7,6 +7,7 @@ import Svg, { Path, Circle } from 'react-native-svg';
 
 interface AccountManagerProps {
     onClose: () => void;
+    showCloseButton?: boolean;
 }
 
 // SVG Icons
@@ -42,7 +43,7 @@ const BriefcaseIcon = ({ size = 16 }: { size?: number }) => (
     </Svg>
 );
 
-const AccountManager: React.FC<AccountManagerProps> = ({ onClose }) => {
+const AccountManager: React.FC<AccountManagerProps> = ({ onClose, showCloseButton = true }) => {
     const { accounts, addAccount, updateAccount, deleteAccount } = useFinancials();
     const { profile } = useAuth();
 
@@ -357,14 +358,16 @@ const AccountManager: React.FC<AccountManagerProps> = ({ onClose }) => {
                 </View>
 
                 {/* Close Button */}
-                <TouchableOpacity
-                    onPress={onClose}
-                    className="border border-white/20 rounded-lg py-4"
-                >
-                    <Text className="text-white text-center font-medium">
-                        Fechar
-                    </Text>
-                </TouchableOpacity>
+                {showCloseButton && (
+                    <TouchableOpacity
+                        onPress={onClose}
+                        className="border border-white/20 rounded-lg py-4"
+                    >
+                        <Text className="text-white text-center font-medium">
+                            Fechar
+                        </Text>
+                    </TouchableOpacity>
+                )}
             </View>
         </ScrollView>
     );

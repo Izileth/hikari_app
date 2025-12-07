@@ -9,10 +9,13 @@ export default function AppLayout() {
   }
 
   return (
-    <Stack>
+    <Stack screenOptions={{
+      contentStyle: { backgroundColor: '#000' },
+    }}>
       <Stack.Screen name="profile" options={{ headerShown: false }} />
       <Stack.Screen name="financials" options={{ headerShown: false }} />
-      <Stack.Screen name="edit-profile" options={{ headerShown: false, presentation: 'modal' }} />
+      <Stack.Screen name="edit-profile" options={{ headerShown: false }} />
+      <Stack.Screen name="financial-settings" options={{ headerShown: false }} />
     </Stack>
   );
 }

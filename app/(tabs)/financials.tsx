@@ -1,6 +1,6 @@
 import { View, Text, ActivityIndicator, ScrollView, RefreshControl, TouchableOpacity, Modal } from "react-native";
 import React, { useState } from 'react';
-import { useFinancials, Transaction, Category, Account } from "../../context/FinancialContext";
+import { useFinancials, Transaction} from "../../context/FinancialContext";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { AccountCard } from "../../components/financials/AccountCard";
 import { TransactionList } from "../../components/financials/TransactionList";
