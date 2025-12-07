@@ -54,11 +54,18 @@ export type CategoryUpdate = Database['public']['Tables']['transaction_categorie
     is_public?: boolean;
 };
 
+// Types for Financial Targets
+export type FinancialTarget = Database['public']['Tables']['user_financial_targets']['Row'];
+export type FinancialTargetInsert = Database['public']['Tables']['user_financial_targets']['Insert'];
+export type FinancialTargetUpdate = Database['public']['Tables']['user_financial_targets']['Update'];
+
+
 interface FinancialContextType {
     accounts: Account[];
     transactions: Transaction[];
     categories: Category[];
     budgets: Budget[];
+    financialTargets: FinancialTarget[]; // New
     loading: boolean;
     error: Error | null;
     refetch: () => void;
@@ -71,6 +78,10 @@ interface FinancialContextType {
     addCategory: (category: CategoryInsert) => Promise<any>;
     updateCategory: (id: number, updates: CategoryUpdate) => Promise<any>;
     deleteCategory: (id: number) => Promise<any>;
+    // New CRUD for targets
+    addFinancialTarget: (target: FinancialTargetInsert) => Promise<any>;
+    updateFinancialTarget: (id: number, updates: FinancialTargetUpdate) => Promise<any>;
+    deleteFinancialTarget: (id: number) => Promise<any>;
 }
 
 const FinancialContext = createContext<FinancialContextType | undefined>(undefined);
@@ -82,6 +93,7 @@ export const FinancialProvider = ({ children }: { children: ReactNode }) => {
     const [transactions, setTransactions] = useState<Transaction[]>([]);
     const [categories, setCategories] = useState<Category[]>([]);
     const [budgets, setBudgets] = useState<Budget[]>([]);
+    const [financialTargets, setFinancialTargets] = useState<FinancialTarget[]>([]); // New state
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<Error | null>(null);
 
@@ -99,23 +111,27 @@ export const FinancialProvider = ({ children }: { children: ReactNode }) => {
                 accountsRes,
                 transactionsRes,
                 categoriesRes,
-                budgetsRes
+                budgetsRes,
+                targetsRes // New fetch
             ] = await Promise.all([
                 supabase.from('accounts').select('*').or(`profile_id.eq.${profile.id},is_public.eq.true`),
                 supabase.from('transactions').select('*').eq('profile_id', profile.id).order('transaction_date', { ascending: false }),
                 supabase.from('transaction_categories').select('*').or(`profile_id.eq.${profile.id},is_public.eq.true`),
-                supabase.from('budgets').select('*').eq('profile_id', profile.id)
+                supabase.from('budgets').select('*').eq('profile_id', profile.id),
+                supabase.from('user_financial_targets').select('*').eq('profile_id', profile.id) // New fetch
             ]);
 
             if (accountsRes.error) throw accountsRes.error;
             if (transactionsRes.error) throw transactionsRes.error;
             if (categoriesRes.error) throw categoriesRes.error;
             if (budgetsRes.error) throw budgetsRes.error;
+            if (targetsRes.error) throw targetsRes.error; // New error check
 
             setAccounts(accountsRes.data || []);
             setTransactions(transactionsRes.data || []);
             setCategories(categoriesRes.data || []);
             setBudgets(budgetsRes.data || []);
+            setFinancialTargets(targetsRes.data || []); // New state update
 
         } catch (e: any) {
             setError(e);
@@ -133,6 +149,7 @@ export const FinancialProvider = ({ children }: { children: ReactNode }) => {
             setTransactions([]);
             setCategories([]);
             setBudgets([]);
+            setFinancialTargets([]); // Reset new state
         }
     }, [profile]);
 
@@ -209,11 +226,35 @@ export const FinancialProvider = ({ children }: { children: ReactNode }) => {
         return data;
     };
 
+    // Financial Target Management
+    const addFinancialTarget = async (target: FinancialTargetInsert) => {
+        if (!profile?.id) throw new Error("User not authenticated");
+        const { data, error } = await supabase.from('user_financial_targets').insert({ ...target, profile_id: profile.id }).select();
+        if (error) throw error;
+        refetch();
+        return data;
+    };
+
+    const updateFinancialTarget = async (id: number, updates: FinancialTargetUpdate) => {
+        const { data, error } = await supabase.from('user_financial_targets').update(updates).eq('id', id).select();
+        if (error) throw error;
+        refetch();
+        return data;
+    };
+
+    const deleteFinancialTarget = async (id: number) => {
+        const { data, error } = await supabase.from('user_financial_targets').delete().eq('id', id);
+        if (error) throw error;
+        refetch();
+        return data;
+    };
+
     const value = {
         accounts,
         transactions,
         categories,
         budgets,
+        financialTargets, // New
         loading,
         error,
         refetch,
@@ -226,6 +267,9 @@ export const FinancialProvider = ({ children }: { children: ReactNode }) => {
         addCategory,
         updateCategory,
         deleteCategory,
+        addFinancialTarget, // New
+        updateFinancialTarget, // New
+        deleteFinancialTarget, // New
     };
 
     return (

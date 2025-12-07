@@ -2,7 +2,7 @@ import React, { useState, useMemo, useEffect } from 'react';
 import { View, Text, TextInput, TouchableOpacity, Alert, FlatList, ScrollView, Switch, Platform } from 'react-native';
 import { useFinancials, Account, AccountInsert, AccountUpdate } from '../../context/FinancialContext';
 import { useAuth } from '../../context/AuthContext';
-import { Picker } from '@react-native-picker/picker';
+import { CustomPicker } from '../ui/CustomPicker';
 import Svg, { Path, Circle } from 'react-native-svg';
 
 interface AccountManagerProps {
@@ -42,6 +42,14 @@ const BriefcaseIcon = ({ size = 16 }: { size?: number }) => (
         <Path d="M20 7H4a2 2 0 00-2 2v10a2 2 0 002 2h16a2 2 0 002-2V9a2 2 0 00-2-2zM16 21V5a2 2 0 00-2-2h-4a2 2 0 00-2 2v16" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
     </Svg>
 );
+
+const accountTypes = [
+    { label: "Conta Corrente", value: "checking" },
+    { label: "Poupança", value: "savings" },
+    { label: "Cartão de Crédito", value: "credit_card" },
+    { label: "Investimento", value: "investment" },
+    { label: "Dinheiro", value: "cash" },
+];
 
 const AccountManager: React.FC<AccountManagerProps> = ({ onClose, showCloseButton = true }) => {
     const { accounts, addAccount, updateAccount, deleteAccount } = useFinancials();
@@ -250,20 +258,12 @@ const AccountManager: React.FC<AccountManagerProps> = ({ onClose, showCloseButto
                     {/* Type Picker */}
                     <View className="mb-6">
                         <Text className="text-white/60 text-sm mb-2">Tipo de Conta</Text>
-                        <View className="border border-white/20 rounded-lg overflow-hidden">
-                            <Picker
-                                selectedValue={type}
-                                onValueChange={(itemValue) => setType(itemValue)}
-                                style={{ color: '#FFFFFF', backgroundColor: 'transparent' }}
-                                dropdownIconColor="#FFFFFF"
-                            >
-                                <Picker.Item label="Conta Corrente" value="checking" color={Platform.OS === 'ios' ? '#FFFFFF' : '#000000'} />
-                                <Picker.Item label="Poupança" value="savings" color={Platform.OS === 'ios' ? '#FFFFFF' : '#000000'} />
-                                <Picker.Item label="Cartão de Crédito" value="credit_card" color={Platform.OS === 'ios' ? '#FFFFFF' : '#000000'} />
-                                <Picker.Item label="Investimento" value="investment" color={Platform.OS === 'ios' ? '#FFFFFF' : '#000000'} />
-                                <Picker.Item label="Dinheiro" value="cash" color={Platform.OS === 'ios' ? '#FFFFFF' : '#000000'} />
-                            </Picker>
-                        </View>
+                        <CustomPicker
+                            selectedValue={type}
+                            onValueChange={(itemValue) => setType(itemValue)}
+                            items={accountTypes}
+                            placeholder="Selecione um tipo de conta"
+                        />
                     </View>
 
                     {/* Public Switch */}

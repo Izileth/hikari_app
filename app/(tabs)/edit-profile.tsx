@@ -1,41 +1,77 @@
-import { View, Text, TextInput, TouchableOpacity, Alert, ActivityIndicator, ScrollView, KeyboardAvoidingView, Platform, Switch } from "react-native";
+import { View, Text, TextInput, TouchableOpacity, Alert, ActivityIndicator, ScrollView, KeyboardAvoidingView, Platform, Modal } from "react-native";
 import React, { useState, useEffect } from 'react';
 import { useProfile } from "../../context/ProfileContext";
+import { useFinancials, FinancialTarget, FinancialTargetInsert, FinancialTargetUpdate } from "../../context/FinancialContext";
 import { useRouter } from "expo-router";
-import Svg, { Path, Circle } from 'react-native-svg';
+import Svg, { Path } from 'react-native-svg';
+import { CustomPicker } from "../../components/ui/CustomPicker";
 
-const GlobeIcon = ({ size = 20 }: { size?: number }) => (
-    <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
-        <Circle cx="12" cy="12" r="10" stroke="white" strokeWidth="2" />
-        <Path d="M2 12h20M12 2a15.3 15.3 0 014 10 15.3 15.3 0 01-4 10 15.3 15.3 0 01-4-10 15.3 15.3 0 014-10z" stroke="white" strokeWidth="2" strokeLinecap="round" />
-    </Svg>
-);
-
+// Icons
 const BackIcon = ({ size = 24, color = "white" }) => (
     <Svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
         <Path d="M19 12H5M12 19l-7-7 7-7" />
     </Svg>
 );
 
+const PlusIcon = ({ size = 20, color = "white" }) => (
+    <Svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <Path d="M12 5v14M5 12h14" />
+    </Svg>
+);
+
+const TrashIcon = ({ size = 18, color = "white" }) => (
+    <Svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+         <Path d="M3 6h18M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6M8 6V4a2 2 0 012-2h4a2 2 0 012 2v2M10 11v6M14 11v6"/>
+    </Svg>
+);
+
+const EditIcon = ({ size = 16, color = "white" }) => (
+    <Svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <Path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/>
+    </Svg>
+);
+
+const TargetIcon = ({ size = 40, color = "white" }) => (
+    <Svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <Path d="M12 2a10 10 0 100 20 10 10 0 000-20z"/>
+        <Path d="M12 6a6 6 0 100 12 6 6 0 000-12z"/>
+        <Path d="M12 10a2 2 0 100 4 2 2 0 000-4z"/>
+    </Svg>
+);
+
+const targetTypes = [
+    { label: "Valor (R$)", value: "currency" },
+    { label: "Porcentagem (%)", value: "percentage" },
+];
+
+const targetTimescales = [
+    { label: "Mensal", value: "monthly" },
+    { label: "Anual", value: "yearly" },
+];
+
 export default function EditProfileScreen() {
     const { profile, updateProfile, loading: profileLoading } = useProfile();
+    const { financialTargets, addFinancialTarget, updateFinancialTarget, deleteFinancialTarget, loading: financialsLoading } = useFinancials();
     const router = useRouter();
 
     const [name, setName] = useState('');
     const [nickname, setNickname] = useState('');
     const [bio, setBio] = useState('');
-    const [isPublic, setIsPublic] = useState(true);
-    const [preferences, setPreferences] = useState('');
 
     const [isSaving, setIsSaving] = useState(false);
+    const [modalVisible, setModalVisible] = useState(false);
+    const [currentTarget, setCurrentTarget] = useState<FinancialTarget | null>(null);
+
+    const [metricName, setMetricName] = useState('');
+    const [targetValue, setTargetValue] = useState('');
+    const [targetType, setTargetType] = useState<'currency' | 'percentage'>('currency');
+    const [timescale, setTimescale] = useState<'monthly' | 'yearly'>('monthly');
 
     useEffect(() => {
         if (profile) {
             setName(profile.name || '');
             setNickname(profile.nickname || '');
             setBio(profile.bio || '');
-            setIsPublic(profile.is_public);
-            setPreferences(JSON.stringify(profile.preferences || {}, null, 2));
         }
     }, [profile]);
 
@@ -45,11 +81,9 @@ export default function EditProfileScreen() {
             return;
         }
 
-        let parsedPrefs;
-        try {
-            parsedPrefs = JSON.parse(preferences);
-        } catch (e) {
-            Alert.alert('Erro', 'As preferências não são um JSON válido.');
+        const slugRegex = /^[a-z0-9_]+$/;
+        if (nickname.trim() && !slugRegex.test(nickname)) {
+            Alert.alert('Apelido Inválido', 'O apelido deve conter apenas letras minúsculas, números e underlines (_)');
             return;
         }
 
@@ -58,167 +92,292 @@ export default function EditProfileScreen() {
             name,
             nickname,
             bio,
-            is_public: isPublic,
-            preferences: parsedPrefs,
         });
 
         if (error) {
             Alert.alert('Erro', error.message);
         } else {
             Alert.alert('Sucesso', 'Perfil atualizado com sucesso!');
-            router.back();
         }
         setIsSaving(false);
     };
 
-    const handleCancel = () => {
-        router.back();
+    const openTargetModal = (target: FinancialTarget | null = null) => {
+        setCurrentTarget(target);
+        if (target) {
+            setMetricName(target.metric_name);
+            setTargetValue(String(target.target_value));
+            setTargetType(target.target_type as any);
+            setTimescale(target.timescale as any);
+        } else {
+            setMetricName('');
+            setTargetValue('');
+            setTargetType('currency');
+            setTimescale('monthly');
+        }
+        setModalVisible(true);
     };
 
-    if (profileLoading && !profile) {
+    const handleSaveTarget = async () => {
+        if (!metricName.trim() || !targetValue.trim()) {
+            Alert.alert('Atenção', 'O nome da métrica e o valor alvo são obrigatórios');
+            return;
+        }
+
+        const numericValue = parseFloat(targetValue.replace(',', '.'));
+        if (isNaN(numericValue)) {
+            Alert.alert('Erro', 'O valor alvo deve ser um número');
+            return;
+        }
+
+        const targetData = {
+            metric_name: metricName,
+            target_value: numericValue,
+            target_type: targetType,
+            timescale,
+        };
+
+        try {
+            if (currentTarget) {
+                await updateFinancialTarget(currentTarget.id, targetData as FinancialTargetUpdate);
+            } else {
+                await addFinancialTarget(targetData as FinancialTargetInsert);
+            }
+            setModalVisible(false);
+        } catch (error: any) {
+            Alert.alert('Erro ao Salvar Meta', error.message);
+        }
+    };
+    
+    const handleDeleteTarget = (targetId: number) => {
+        Alert.alert(
+            'Excluir Meta',
+            'Tem certeza que deseja excluir esta meta?',
+            [
+                { text: 'Cancelar', style: 'cancel' },
+                { text: 'Excluir', style: 'destructive', onPress: () => deleteFinancialTarget(targetId) }
+            ]
+        );
+    };
+
+    if ((profileLoading || financialsLoading) && !profile) {
         return (
             <View className="flex-1 bg-black justify-center items-center">
                 <ActivityIndicator size="large" color="#ffffff" />
-                <Text className="text-white/60 mt-4">Carregando perfil...</Text>
             </View>
         );
     }
 
     return (
-        <KeyboardAvoidingView
-            behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-            className="flex-1 bg-black"
-        >
-            <ScrollView
-                className="flex-1"
-                contentContainerStyle={{ flexGrow: 1 }}
-                keyboardShouldPersistTaps="handled"
-            >
-                <View className="flex-1  pt-16">
+        <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} className="flex-1 bg-black">
+            <ScrollView className="flex-1" keyboardShouldPersistTaps="handled">
+                <View className="pt-16">
                     {/* Header */}
-                    <View className="flex-row w-full max-w-full items-center px-4">
-                        <TouchableOpacity onPress={() => router.back()} className="p-2">
+                    <View className="flex-row items-center px-6 mb-8">
+                        <TouchableOpacity onPress={() => router.back()} className="mr-4">
                             <BackIcon />
                         </TouchableOpacity>
-                        <Text className="text-white text-2xl font-bold ml-4">Minhas Finanças</Text>
+                        <Text className="text-white text-2xl font-bold">Editar Perfil</Text>
                     </View>
-                    <View className="flex-1  px-8 pt-8 pb-8">
-                        {/* Name */}
+
+                    <View className="px-6 pb-8">
+                        {/* Profile Info */}
                         <View className="mb-6">
-                            <Text className="text-white/60 text-sm mb-2">
-                                Nome completo
-                            </Text>
-                            <View className="border rounded-lg border-white/40">
-                                <TextInput
-                                    placeholder="Seu nome"
-                                    placeholderTextColor="#666666"
-                                    value={name}
-                                    onChangeText={setName}
-                                    className="px-4 py-3 text-white text-base"
+                            <Text className="text-white/60 text-sm mb-2">Nome</Text>
+                            <View className="border border-white/20 rounded-lg">
+                                <TextInput 
+                                    placeholder="Seu nome" 
+                                    value={name} 
+                                    onChangeText={setName} 
+                                    className="px-4 py-4 text-white text-base" 
+                                    placeholderTextColor="#666666" 
                                 />
                             </View>
                         </View>
 
-                        {/* Nickname */}
                         <View className="mb-6">
-                            <Text className="text-white/60 text-sm mb-2">
-                                Apelido
-                            </Text>
-                            <View className="border rounded-lg flex-row items-center border-white/40">
+                            <Text className="text-white/60 text-sm mb-2">Apelido</Text>
+                            <View className="border border-white/20 rounded-lg flex-row items-center">
                                 <Text className="text-white/40 pl-4 text-base">@</Text>
-                                <TextInput
-                                    placeholder="apelido"
+                                <TextInput 
+                                    placeholder="seu_apelido" 
+                                    value={nickname} 
+                                    onChangeText={setNickname} 
+                                    autoCapitalize="none" 
+                                    className="flex-1 px-2 py-4 text-white text-base" 
                                     placeholderTextColor="#666666"
-                                    value={nickname}
-                                    onChangeText={setNickname}
-                                    autoCapitalize="none"
-                                    className="flex-1 px-2 py-3 text-white text-base"
                                 />
                             </View>
-                        </View>
-
-                        {/* Bio */}
-                        <View className="mb-6">
-                            <Text className="text-white/60 text-sm mb-2">
-                                Sobre você
+                            <Text className="text-white/40 text-xs mt-2">
+                                Apenas letras minúsculas, números e underlines
                             </Text>
-                            <View className="border rounded-lg border-white/40">
-                                <TextInput
-                                    placeholder="Conte um pouco sobre você..."
-                                    placeholderTextColor="#666666"
-                                    value={bio}
-                                    onChangeText={setBio}
-                                    multiline
+                        </View>
+
+                        <View className="mb-8">
+                            <Text className="text-white/60 text-sm mb-2">Bio</Text>
+                            <View className="border border-white/20 rounded-lg">
+                                <TextInput 
+                                    placeholder="Conte um pouco sobre você..." 
+                                    value={bio} 
+                                    onChangeText={setBio} 
+                                    multiline 
                                     numberOfLines={4}
-                                    textAlignVertical="top"
-                                    className="px-4 py-3 text-white text-base min-h-[100px]"
+                                    className="px-4 py-4 text-white text-base min-h-[100px]" 
+                                    placeholderTextColor="#666666" 
+                                    textAlignVertical="top" 
                                 />
                             </View>
                         </View>
 
-                        {/* Public Profile Toggle */}
-                        <View className="flex-row items-center justify-between mb-6 p-4 border border-white/20 rounded-lg">
-                            <View className="flex-row items-center flex-1">
-                                <GlobeIcon size={20} />
-                                <View className="ml-3 flex-1">
-                                    <Text className="text-white font-medium">Perfil Público</Text>
-                                    <Text className="text-white/40 text-xs mt-1">
-                                        Outros usuários poderão ver seu perfil
+                        <TouchableOpacity 
+                            onPress={handleUpdateProfile} 
+                            disabled={isSaving} 
+                            className={`rounded-lg py-4 mb-12 ${isSaving ? 'bg-white/20' : 'bg-white'}`}
+                        >
+                            <Text className={`text-center font-bold text-base ${isSaving ? 'text-white/60' : 'text-black'}`}>
+                                {isSaving ? 'Salvando...' : 'Salvar Alterações'}
+                            </Text>
+                        </TouchableOpacity>
+                        
+                        {/* Divider */}
+                        <View className="h-px bg-white/20 my-12" />
+
+                        {/* Financial Targets */}
+                        <View>
+                            <View className="flex-row justify-between items-center mb-6">
+                                <Text className="text-white text-xl font-bold">Metas Financeiras</Text>
+                                <TouchableOpacity 
+                                    onPress={() => openTargetModal(null)} 
+                                    className="flex-row items-center border border-white/20 px-3 py-2 rounded-lg"
+                                >
+                                    <PlusIcon size={16} />
+                                    <Text className="text-white font-medium text-sm ml-2">Nova</Text>
+                                </TouchableOpacity>
+                            </View>
+
+                            {financialTargets.length > 0 ? (
+                                financialTargets.map(target => (
+                                    <View key={target.id} className="border border-white/20 rounded-lg p-4 mb-3">
+                                        <View className="flex-row justify-between items-start mb-3">
+                                            <View className="flex-1 mr-4">
+                                                <Text className="text-white font-bold text-base mb-1">
+                                                    {target.metric_name}
+                                                </Text>
+                                                <Text className="text-white/40 text-sm">
+                                                    {target.timescale === 'monthly' ? 'Mensal' : 'Anual'}
+                                                </Text>
+                                            </View>
+                                            <View className="flex-row gap-3">
+                                                <TouchableOpacity onPress={() => openTargetModal(target)}>
+                                                    <EditIcon size={18} />
+                                                </TouchableOpacity>
+                                                <TouchableOpacity onPress={() => handleDeleteTarget(target.id)}>
+                                                    <TrashIcon size={18} />
+                                                </TouchableOpacity>
+                                            </View>
+                                        </View>
+                                        <Text className="text-white text-2xl font-bold">
+                                            {target.target_type === 'percentage' 
+                                                ? `${target.target_value}%` 
+                                                : new Intl.NumberFormat('pt-BR', { 
+                                                    style: 'currency', 
+                                                    currency: 'BRL' 
+                                                  }).format(target.target_value)
+                                            }
+                                        </Text>
+                                    </View>
+                                ))
+                            ) : (
+                                <View className="border border-white/20 rounded-lg p-8 items-center">
+                                    <TargetIcon size={40} color="#333333" />
+                                    <Text className="text-white/40 text-center mt-4">
+                                        Nenhuma meta definida
                                     </Text>
                                 </View>
-                            </View>
-                            <Switch
-                                trackColor={{ false: '#333333', true: '#ffffff' }}
-                                thumbColor={isPublic ? '#000000' : '#666666'}
-                                ios_backgroundColor="#333333"
-                                onValueChange={setIsPublic}
-                                value={isPublic}
-                            />
-                        </View>
-
-                        {/* Preferences */}
-                        <View className="mb-6">
-                            <Text className="text-white/60 text-sm mb-2">
-                                Preferências (JSON)
-                            </Text>
-                            <View className="border rounded-lg border-white/40">
-                                <TextInput
-                                    placeholder='{"theme": "dark"}'
-                                    placeholderTextColor="#666666"
-                                    value={preferences}
-                                    onChangeText={setPreferences}
-                                    multiline
-                                    autoCapitalize="none"
-                                    textAlignVertical="top"
-                                    className="px-4 py-3 text-white text-base min-h-[100px] font-mono"
-                                />
-                            </View>
-                        </View>
-
-                        {/* Action Buttons */}
-                        <View className="flex-row gap-3 mb-6">
-                            <TouchableOpacity
-                                onPress={handleCancel}
-                                disabled={isSaving}
-                                className="flex-1 border border-white/20 rounded-lg py-3"
-                            >
-                                <Text className="text-white text-center font-medium">
-                                    Cancelar
-                                </Text>
-                            </TouchableOpacity>
-                            <TouchableOpacity
-                                onPress={handleUpdateProfile}
-                                disabled={isSaving}
-                                className={`flex-1 rounded-lg py-3 ${isSaving ? 'bg-white/20' : 'bg-white'}`}
-                            >
-                                <Text className={`text-center font-bold ${isSaving ? 'text-white' : 'text-black'}`}>
-                                    {isSaving ? 'Salvando...' : 'Salvar'}
-                                </Text>
-                            </TouchableOpacity>
+                            )}
                         </View>
                     </View>
                 </View>
             </ScrollView>
+
+            {/* Target Form Modal */}
+            <Modal 
+                animationType="slide" 
+                transparent={true} 
+                visible={modalVisible} 
+                onRequestClose={() => setModalVisible(false)}
+            >
+                <KeyboardAvoidingView 
+                    behavior={Platform.OS === 'ios' ? 'padding' : 'height'} 
+                    className="flex-1 bg-black/95 justify-end"
+                >
+                    <View className="bg-black border-t border-white/20 p-6 rounded-t-2xl">
+                        <Text className="text-white text-xl font-bold mb-6">
+                            {currentTarget ? 'Editar Meta' : 'Nova Meta'}
+                        </Text>
+                        
+                        <View className="mb-6">
+                            <Text className="text-white/60 text-sm mb-2">Nome da Métrica</Text>
+                            <View className="border border-white/20 rounded-lg">
+                                <TextInput 
+                                    value={metricName} 
+                                    onChangeText={setMetricName} 
+                                    placeholder="Ex: Economia Mensal" 
+                                    className="px-4 py-4 text-white text-base" 
+                                    placeholderTextColor="#666666"
+                                />
+                            </View>
+                        </View>
+                        
+                        <View className="mb-6">
+                            <Text className="text-white/60 text-sm mb-2">Valor Alvo</Text>
+                            <View className="border border-white/20 rounded-lg">
+                                <TextInput 
+                                    value={targetValue} 
+                                    onChangeText={setTargetValue} 
+                                    placeholder="1000" 
+                                    keyboardType="numeric" 
+                                    className="px-4 py-4 text-white text-base" 
+                                    placeholderTextColor="#666666"
+                                />
+                            </View>
+                        </View>
+                        
+                        <View className="mb-6">
+                            <Text className="text-white/60 text-sm mb-2">Tipo de Meta</Text>
+                            <CustomPicker 
+                                selectedValue={targetType} 
+                                onValueChange={setTargetType} 
+                                items={targetTypes} 
+                            />
+                        </View>
+
+                        <View className="mb-8">
+                            <Text className="text-white/60 text-sm mb-2">Período</Text>
+                            <CustomPicker 
+                                selectedValue={timescale} 
+                                onValueChange={setTimescale} 
+                                items={targetTimescales} 
+                            />
+                        </View>
+
+                        <View className="flex-row gap-3">
+                            <TouchableOpacity 
+                                onPress={() => setModalVisible(false)} 
+                                className="flex-1 border border-white/20 rounded-lg py-4"
+                            >
+                                <Text className="text-white text-center font-medium">Cancelar</Text>
+                            </TouchableOpacity>
+                            <TouchableOpacity 
+                                onPress={handleSaveTarget} 
+                                className="flex-1 bg-white rounded-lg py-4"
+                            >
+                                <Text className="text-black text-center font-bold">Salvar</Text>
+                            </TouchableOpacity>
+                        </View>
+                    </View>
+                </KeyboardAvoidingView>
+            </Modal>
         </KeyboardAvoidingView>
     );
 }

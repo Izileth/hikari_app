@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { View, Text, TextInput, TouchableOpacity, Alert, Platform, ScrollView, Switch } from 'react-native';
 import { useFinancials, Transaction, TransactionInsert } from '../../context/FinancialContext';
-import { Picker } from '@react-native-picker/picker';
+import { CustomPicker } from '../ui/CustomPicker';
 import Svg, { Path } from 'react-native-svg';
 
 interface TransactionFormProps {
@@ -169,28 +169,16 @@ const TransactionForm: React.FC<TransactionFormProps> = ({ transaction, onSave, 
                     <View className="flex-row justify-between items-center mb-2">
                         <Text className="text-white/60 text-sm">Conta</Text>
                     </View>
-                    <View className="border border-white/20 rounded-lg overflow-hidden">
-                        <Picker
-                            selectedValue={accountId}
-                            onValueChange={(itemValue) => setAccountId(itemValue)}
-                            style={{ color: '#FFFFFF', backgroundColor: 'transparent' }}
-                            dropdownIconColor="#FFFFFF"
-                            enabled={accounts.length > 0}
-                        >
-                            {accounts.length > 0 ? (
-                                accounts.map(acc => (
-                                    <Picker.Item
-                                        key={acc.id}
-                                        label={`${acc.name}${acc.type ? ' • ' + acc.type.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase()) : ''}`}
-                                        value={acc.id}
-                                        color={Platform.OS === 'ios' ? '#FFFFFF' : '#000000'}
-                                    />
-                                ))
-                            ) : (
-                                <Picker.Item label="Nenhuma conta disponível" value={null} enabled={false} color={Platform.OS === 'ios' ? '#FFFFFF' : '#000000'} />
-                            )}
-                        </Picker>
-                    </View>
+                    <CustomPicker
+                        selectedValue={accountId}
+                        onValueChange={(itemValue) => setAccountId(itemValue)}
+                        items={accounts.map(acc => ({
+                            label: `${acc.name}${acc.type ? ' • ' + acc.type.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase()) : ''}`,
+                            value: acc.id
+                        }))}
+                        placeholder="Selecione uma conta"
+                        enabled={accounts.length > 0}
+                    />
                 </View>
 
                 {/* Category */}
@@ -198,23 +186,16 @@ const TransactionForm: React.FC<TransactionFormProps> = ({ transaction, onSave, 
                     <View className="flex-row justify-between items-center mb-2">
                         <Text className="text-white/60 text-sm">Categoria</Text>
                     </View>
-                    <View className="border border-white/20 rounded-lg overflow-hidden">
-                        <Picker
-                            selectedValue={categoryId}
-                            onValueChange={(itemValue) => setCategoryId(itemValue)}
-                            style={{ color: '#FFFFFF', backgroundColor: 'transparent' }}
-                            dropdownIconColor="#FFFFFF"
-                            enabled={filteredCategories.length > 0}
-                        >
-                            {filteredCategories.length > 0 ? (
-                                filteredCategories.map(cat => (
-                                    <Picker.Item key={cat.id} label={cat.name} value={cat.id} color={Platform.OS === 'ios' ? '#FFFFFF' : '#000000'} />
-                                ))
-                            ) : (
-                                <Picker.Item label="Nenhuma categoria disponível" value={null} enabled={false} color={Platform.OS === 'ios' ? '#FFFFFF' : '#000000'} />
-                            )}
-                        </Picker>
-                    </View>
+                    <CustomPicker
+                        selectedValue={categoryId}
+                        onValueChange={(itemValue) => setCategoryId(itemValue)}
+                        items={filteredCategories.map(cat => ({
+                            label: cat.name,
+                            value: cat.id
+                        }))}
+                        placeholder="Selecione uma categoria"
+                        enabled={filteredCategories.length > 0}
+                    />
                 </View>
 
                 {/* Notes */}

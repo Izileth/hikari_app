@@ -286,6 +286,47 @@ export type Database = {
           },
         ]
       }
+      user_financial_targets: {
+        Row: {
+          id: number
+          profile_id: number
+          metric_name: string
+          target_value: number
+          target_type: Database["public"]["Enums"]["financial_target_type"]
+          timescale: Database["public"]["Enums"]["financial_timescale"]
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: number
+          profile_id: number
+          metric_name: string
+          target_value: number
+          target_type: Database["public"]["Enums"]["financial_target_type"]
+          timescale: Database["public"]["Enums"]["financial_timescale"]
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: number
+          profile_id?: number
+          metric_name?: string
+          target_value?: number
+          target_type?: Database["public"]["Enums"]["financial_target_type"]
+          timescale?: Database["public"]["Enums"]["financial_timescale"]
+          created_at?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_financial_targets_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          }
+        ]
+      }
       profiles: {
         Row: {
           avatar_url: string | null
@@ -297,7 +338,6 @@ export type Database = {
           is_public: boolean
           name: string
           nickname: string | null
-          preferences: Json | null
           role: string
           slug: string
           updated_at: string | null
@@ -312,7 +352,6 @@ export type Database = {
           is_public?: boolean
           name: string
           nickname?: string | null
-          preferences?: Json | null
           role?: string
           slug: string
           updated_at?: string | null
@@ -327,7 +366,6 @@ export type Database = {
           is_public?: boolean
           name?: string
           nickname?: string | null
-          preferences?: Json | null
           role?: string
           slug?: string
           updated_at?: string | null
@@ -477,6 +515,8 @@ export type Database = {
         | "achievement"
         | "metric_snapshot"
         | "transaction_share"
+      financial_target_type: "currency" | "percentage"
+      financial_timescale: "monthly" | "yearly"
       post_privacy_level: "public" | "followers_only" | "private"
       transaction_type: "income" | "expense"
     }

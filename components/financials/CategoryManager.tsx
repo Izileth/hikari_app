@@ -2,7 +2,7 @@ import React, { useState, useMemo, useEffect } from 'react';
 import { View, Text, TextInput, TouchableOpacity, Alert, FlatList, ScrollView, Switch, Platform } from 'react-native';
 import { useFinancials, Category, CategoryInsert, CategoryUpdate } from '../../context/FinancialContext';
 import { useAuth } from '../../context/AuthContext';
-import { Picker } from '@react-native-picker/picker';
+import { CustomPicker } from '../ui/CustomPicker';
 import Svg, { Path } from 'react-native-svg';
 
 interface CategoryManagerProps {
@@ -47,7 +47,12 @@ const GlobeIcon = ({ size = 16 }: { size?: number }) => (
   </Svg>
 );
 
-const CategoryManager: React.FC<CategoryManagerProps> = ({ onClose }) => {
+const categoryTypes = [
+    { label: "Despesa", value: "expense" },
+    { label: "Receita", value: "income" },
+];
+
+const CategoryManager: React.FC<CategoryManagerProps> = ({ onClose, showCloseButton = true }) => {
     const { categories, addCategory, updateCategory, deleteCategory } = useFinancials();
     const { profile } = useAuth();
 
@@ -185,17 +190,11 @@ const CategoryManager: React.FC<CategoryManagerProps> = ({ onClose }) => {
                     {/* Type Picker */}
                     <View className="mb-6">
                         <Text className="text-white/60 text-sm mb-2">Tipo</Text>
-                        <View className="border border-white/20 rounded-lg overflow-hidden">
-                            <Picker
-                                selectedValue={type}
-                                onValueChange={(itemValue) => setType(itemValue)}
-                                style={{ color: '#FFFFFF', backgroundColor: 'transparent' }}
-                                dropdownIconColor="#FFFFFF"
-                            >
-                                <Picker.Item label="Despesa" value="expense" color={Platform.OS === 'ios' ? '#FFFFFF' : '#000000'} />
-                                <Picker.Item label="Receita" value="income" color={Platform.OS === 'ios' ? '#FFFFFF' : '#000000'} />
-                            </Picker>
-                        </View>
+                        <CustomPicker
+                            selectedValue={type}
+                            onValueChange={(itemValue) => setType(itemValue)}
+                            items={categoryTypes}
+                        />
                     </View>
 
                     {/* Public Switch */}
@@ -273,14 +272,16 @@ const CategoryManager: React.FC<CategoryManagerProps> = ({ onClose }) => {
                 </View>
 
                 {/* Close Button */}
-                <TouchableOpacity 
-                    onPress={onClose} 
-                    className="border border-white/20 rounded-lg py-4"
-                >
-                    <Text className="text-white text-center font-medium">
-                        Fechar
-                    </Text>
-                </TouchableOpacity>
+                {showCloseButton && (
+                    <TouchableOpacity 
+                        onPress={onClose} 
+                        className="border border-white/20 rounded-lg py-4"
+                    >
+                        <Text className="text-white text-center font-medium">
+                            Fechar
+                        </Text>
+                    </TouchableOpacity>
+                )}
             </View>
         </ScrollView>
     );
