@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, TextInput, TouchableOpacity, Alert, Platform, ScrollView, Switch } from 'react-native';
+import { View, Text, TextInput, TouchableOpacity, Alert, ScrollView, Switch } from 'react-native';
 import { useFinancials, Transaction, TransactionInsert } from '../../context/FinancialContext';
 import { CustomPicker } from '../ui/CustomPicker';
 import Svg, { Path } from 'react-native-svg';

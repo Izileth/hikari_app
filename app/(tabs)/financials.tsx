@@ -1,24 +1,17 @@
 import { View, Text, ActivityIndicator, ScrollView, RefreshControl, TouchableOpacity, Modal } from "react-native";
 import React, { useState } from 'react';
 import { useFinancials, Transaction} from "../../context/FinancialContext";
-import { SafeAreaView } from "react-native-safe-area-context";
 import { AccountCard } from "../../components/financials/AccountCard";
 import { TransactionList } from "../../components/financials/TransactionList";
 import TransactionForm from "../../components/financials/TransactionForm";
 import CategoryManager from "../../components/financials/CategoryManager";
-import AccountManager from "../../components/financials/AccountManager"; // Import AccountManager
-import { useRouter } from "expo-router";
+import AccountManager from "../../components/financials/AccountManager";
+import CustomHeader from "@/components/ui/CustomHeader";
 import Svg, { Path } from 'react-native-svg';
 
 const PlusIcon = ({ size = 24, color = "white" }) => (
     <Svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
         <Path d="M12 5v14M5 12h14" />
-    </Svg>
-);
-
-const BackIcon = ({ size = 24, color = "white" }) => (
-    <Svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-        <Path d="M19 12H5M12 19l-7-7 7-7" />
     </Svg>
 );
 
@@ -30,10 +23,9 @@ const CogIcon = ({ size = 20, color = "white" }) => (
 
 export default function FinancialsScreen() {
     const { accounts, transactions, categories, loading, error, refetch } = useFinancials();
-    const router = useRouter();
     const [transactionModalVisible, setTransactionModalVisible] = useState(false);
     const [categoryModalVisible, setCategoryModalVisible] = useState(false);
-    const [accountModalVisible, setAccountModalVisible] = useState(false); // State for account modal
+    const [accountModalVisible, setAccountModalVisible] = useState(false);
 
     const [selectedTransaction, setSelectedTransaction] = useState<Transaction | null>(null);
 
@@ -44,12 +36,12 @@ export default function FinancialsScreen() {
     };
     const handleSaveTransaction = () => {
         setTransactionModalVisible(false);
-        setSelectedTransaction(null); // Clear selected transaction after saving
+        setSelectedTransaction(null);
         refetch();
     };
     const handleCloseTransaction = () => {
         setTransactionModalVisible(false);
-        setSelectedTransaction(null); // Clear selected transaction on close
+        setSelectedTransaction(null);
     };
 
     const handleTransactionPress = (transaction: Transaction) => {
@@ -119,58 +111,50 @@ export default function FinancialsScreen() {
     }
 
     return (
-        <SafeAreaView className="flex-1 bg-black">
-            <View className="flex-1">
-                {/* Header */}
-                <View className="flex-row items-center p-4">
-                    <TouchableOpacity onPress={() => router.back()} className="p-2">
-                        <BackIcon />
-                    </TouchableOpacity>
-                    <Text className="text-white text-2xl font-bold ml-4">Minhas Finanças</Text>
-                </View>
+        <View className="flex-1 bg-black">
+            <CustomHeader  />
+            
+            {renderContent()}
 
-                {renderContent()}
+            {/* FAB to add transaction */}
+            <TouchableOpacity
+                onPress={() => handlePresentTransactionModal()}
+                className="absolute bottom-6 right-6 bg-zinc-50 w-16 h-16 rounded-full justify-center items-center shadow-lg"
+            >
+                <PlusIcon color="black" />
+            </TouchableOpacity>
 
-                {/* FAB to add transaction */}
-                <TouchableOpacity
-                    onPress={() => handlePresentTransactionModal()} // Call without argument to create new
-                    className="absolute bottom-6 right-6 bg-zinc-50 w-16 h-16 rounded-full justify-center items-center shadow-lg"
-                >
-                    <PlusIcon color="black" />
-                </TouchableOpacity>
+            {/* Transaction Form Modal */}
+            <Modal
+                animationType="slide"
+                visible={transactionModalVisible}
+                onRequestClose={handleCloseTransaction}
+            >
+                <TransactionForm 
+                    transaction={selectedTransaction} 
+                    onSave={handleSaveTransaction} 
+                    onClose={handleCloseTransaction} 
+                />
+            </Modal>
 
-                {/* Transaction Form Modal */}
-                <Modal
-                    animationType="slide"
-                    visible={transactionModalVisible}
-                    onRequestClose={handleCloseTransaction}
-                >
-                    <TransactionForm 
-                        transaction={selectedTransaction} 
-                        onSave={handleSaveTransaction} 
-                        onClose={handleCloseTransaction} 
-                    />
-                </Modal>
+            {/* Category Manager Modal */}
+            <Modal
+                animationType="slide"
+                visible={categoryModalVisible}
+                onRequestClose={handleCloseCategory}
+            >
+                <CategoryManager onClose={handleCloseCategory} />
+            </Modal>
 
-                {/* Category Manager Modal */}
-                <Modal
-                    animationType="slide"
-                    visible={categoryModalVisible}
-                    onRequestClose={handleCloseCategory}
-                >
-                    <CategoryManager onClose={handleCloseCategory} />
-                </Modal>
-
-                {/* Account Manager Modal */}
-                <Modal
-                    animationType="slide"
-                    visible={accountModalVisible}
-                    onRequestClose={handleCloseAccount}
-                >
-                    <AccountManager onClose={handleCloseAccount} />
-                </Modal>
-            </View>
-        </SafeAreaView>
+            {/* Account Manager Modal */}
+            <Modal
+                animationType="slide"
+                visible={accountModalVisible}
+                onRequestClose={handleCloseAccount}
+            >
+                <AccountManager onClose={handleCloseAccount} />
+            </Modal>
+        </View>
     );
 }
 

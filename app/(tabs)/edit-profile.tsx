@@ -39,6 +39,12 @@ const TargetIcon = ({ size = 40, color = "white" }) => (
     </Svg>
 );
 
+const ShareIcon = ({ size = 18, color = 'white' }: { size?: number, color?: string }) => (
+    <Svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <Path d="M4 12v8a2 2 0 002 2h12a2 2 0 002-2v-8M16 6l-4-4-4 4M12 2v13" />
+    </Svg>
+);
+
 const targetTypes = [
     { label: "Valor (R$)", value: "currency" },
     { label: "Porcentagem (%)", value: "percentage" },
@@ -160,6 +166,20 @@ export default function EditProfileScreen() {
         );
     };
 
+    const handleShareTarget = (target: FinancialTarget) => {
+        const formattedValue = target.target_type === 'percentage' 
+            ? `${target.target_value}%` 
+            : new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(target.target_value);
+
+        const shareTitle = `New Goal: ${target.metric_name}`;
+        const shareDescription = `I'm aiming for ${formattedValue} on a ${target.timescale} basis.`;
+        
+        router.push({
+            pathname: '/(tabs)/create-post',
+            params: { title: shareTitle, description: shareDescription, type: 'achievement' }
+        });
+    }
+
     if ((profileLoading || financialsLoading) && !profile) {
         return (
             <View className="flex-1 bg-black justify-center items-center">
@@ -273,6 +293,9 @@ export default function EditProfileScreen() {
                                                 </TouchableOpacity>
                                                 <TouchableOpacity onPress={() => handleDeleteTarget(target.id)}>
                                                     <TrashIcon size={18} />
+                                                </TouchableOpacity>
+                                                <TouchableOpacity onPress={() => handleShareTarget(target)}>
+                                                    <ShareIcon size={18} />
                                                 </TouchableOpacity>
                                             </View>
                                         </View>

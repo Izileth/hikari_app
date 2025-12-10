@@ -5,8 +5,9 @@ import { useProfile } from "../../context/ProfileContext";
 import { useFinancials } from "../../context/FinancialContext";
 import * as ImagePicker from 'expo-image-picker';
 import Svg, { Path, Circle } from 'react-native-svg';
-import { useRouter } from "expo-router";
 import { LineChart, BarChart, PieChart } from "react-native-chart-kit";
+import CustomHeader from "@/components/ui/CustomHeader";
+import { useRouter } from "expo-router";
 
 const screenWidth = Dimensions.get("window").width;
 
@@ -18,21 +19,9 @@ const CameraIcon = ({ size = 20 }: { size?: number }) => (
   </Svg>
 );
 
-const EditIcon = ({ size = 16 }: { size?: number }) => (
-  <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
-    <Path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-  </Svg>
-);
-
 const LogoutIcon = ({ size = 20 }: { size?: number }) => (
   <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
     <Path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4M16 17l5-5-5-5M21 12H9" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-  </Svg>
-);
-
-const FinancialsIcon = ({ size = 16 }: { size?: number }) => (
-  <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
-    <Path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
   </Svg>
 );
 
@@ -41,20 +30,35 @@ const ChartIcon = ({ size = 20 }: { size?: number }) => (
     <Path d="M3 3v18h18M7 16l4-4 4 4 6-6" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
   </Svg>
 );
+const EditIcon = ({ size = 16 }: { size?: number }) => (
+  <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+    <Path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+  </Svg>
+);
+
+
+
+const FinancialsIcon = ({ size = 16 }: { size?: number }) => (
+  <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+    <Path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+  </Svg>
+);
+
+
 
 const CogIcon = ({ size = 16, color = "white" }) => (
     <Svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
       <Path d="M12 20V10M12 20a8 8 0 100-16 8 8 0 000 16zM12 9a1 1 0 100-2 1 1 0 000 2z"/>
     </Svg>
   );
-
 export default function ProfileScreen() {
     const { user, signOut } = useAuth();
     const { profile, uploadAvatar, uploadBanner, loading: profileLoading } = useProfile();
     const { transactions, categories, loading: financialsLoading } = useFinancials();
-    const router = useRouter();
-    
+
     const [isSaving, setIsSaving] = useState(false);
+
+    const router = useRouter();
 
     const handlePickAvatar = async () => {
         const result = await ImagePicker.launchImageLibraryAsync({
@@ -273,6 +277,7 @@ export default function ProfileScreen() {
             behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
             className="flex-1 bg-black"
         >
+            <CustomHeader />
             <ScrollView 
                 className="flex-1"
                 contentContainerStyle={{ flexGrow: 1 }}
@@ -343,9 +348,7 @@ export default function ProfileScreen() {
                         </Text>
                     </View>
 
-                    <View className="px-6 pb-8">
-                        {/* Action Buttons */}
-                        <View className="flex-row gap-3 mb-6">
+                     <View className="flex-row gap-2 px-5 mb-6">
                             <TouchableOpacity
                                 onPress={() => router.push('/(tabs)/edit-profile')}
                                 className="flex-1 flex-row items-center justify-center py-3 border border-white/20 rounded-lg"
@@ -375,6 +378,8 @@ export default function ProfileScreen() {
                             </TouchableOpacity>
                         </View>
 
+
+                    <View className="px-6 pb-8">
                         {/* Bio */}
                         {profile?.bio && (
                             <View className="mb-12">

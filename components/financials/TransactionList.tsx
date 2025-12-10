@@ -1,6 +1,7 @@
 import { View, Text, FlatList, TouchableOpacity } from 'react-native';
 import { Transaction, Account, Category } from '../../context/FinancialContext'; // Import Account and Category
 import Svg, { Path } from 'react-native-svg';
+import { useRouter } from 'expo-router';
 
 
 interface TransactionListProps {
@@ -23,6 +24,12 @@ const ArrowDownIcon = ({ size = 16 }: { size?: number }) => (
   </Svg>
 );
 
+const ShareIcon = ({ size = 16, color = 'white' }: { size?: number, color?: string }) => (
+    <Svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <Path d="M4 12v8a2 2 0 002 2h12a2 2 0 002-2v-8M16 6l-4-4-4 4M12 2v13" />
+    </Svg>
+);
+
 interface TransactionItemProps {
     item: Transaction;
     onPress: (transaction: Transaction) => void;
@@ -32,6 +39,7 @@ interface TransactionItemProps {
 
 function TransactionItem({ item, onPress, accountName, categoryName }: TransactionItemProps) {
     const isIncome = Number(item.amount) > 0;
+    const router = useRouter();
 
     // Format date
     const date = new Date(item.transaction_date);
@@ -45,6 +53,15 @@ function TransactionItem({ item, onPress, accountName, categoryName }: Transacti
         style: 'currency', 
         currency: 'BRL' 
     }).format(Math.abs(Number(item.amount)));
+
+    const handleShare = () => {
+        const shareTitle = `Shared a transaction: ${item.title || item.description}`;
+        const shareDescription = `Amount: ${formattedAmount}`;
+        router.push({
+            pathname: '/(tabs)/create-post',
+            params: { title: shareTitle, description: shareDescription, type: 'transaction_share' }
+        });
+    }
 
     return (
         <TouchableOpacity onPress={() => onPress(item)} className="border border-white/20 rounded-lg p-4 mb-3 flex-row items-center">
@@ -68,11 +85,16 @@ function TransactionItem({ item, onPress, accountName, categoryName }: Transacti
                 </Text>
             </View>
 
-            {/* Amount */}
-            <View className="items-end">
-                <Text className={`font-bold text-base ${isIncome ? 'text-white' : 'text-white'}`}>
-                    {isIncome ? '+' : '-'} {formattedAmount}
-                </Text>
+            {/* Amount and Share Button */}
+            <View className="flex-row items-center">
+                <View className="items-end mr-4">
+                    <Text className={`font-bold text-base ${isIncome ? 'text-white' : 'text-white'}`}>
+                        {isIncome ? '+' : '-'} {formattedAmount}
+                    </Text>
+                </View>
+                <TouchableOpacity onPress={handleShare}>
+                    <ShareIcon />
+                </TouchableOpacity>
             </View>
         </TouchableOpacity>
     );

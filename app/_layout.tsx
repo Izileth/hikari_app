@@ -8,6 +8,7 @@ import { FinancialProvider } from '../context/FinancialContext';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { BottomSheetModalProvider } from '@gorhom/bottom-sheet';
 import { ProfileProvider } from '@/context/ProfileContext';
+import { SocialProvider } from '@/context/SocialContext';
 import '@/global.css';
 
 export default function RootLayout() {
@@ -16,17 +17,18 @@ export default function RootLayout() {
       <BottomSheetModalProvider>
         <AuthProvider>
           <ProfileProvider>
-          <FinancialProvider>
-            <Stack screenOptions={{ 
-              contentStyle: { backgroundColor: '#000' }, 
-            }}>
-              <Stack.Screen name="index" options={{ headerShown: false }} />
-              <Stack.Screen name="redirector" options={{ headerShown: false }} />
-              <Stack.Screen name="(tabs)" options={{ headerShown: false}} />
-              <Stack.Screen name="(auth)" options={{ headerShown: false }} />
-            </Stack>
-            <StatusBar style="light" backgroundColor="#000" translucent />
-          </FinancialProvider>
+            <SocialProvider>
+              <FinancialProvider>
+                <Stack screenOptions={{ 
+                  contentStyle: { backgroundColor: '#000' }, 
+                }}>
+                  <Stack.Screen name="index" options={{ headerShown: false }} />
+                  <Stack.Screen name="(tabs)" options={{ headerShown: false}} />
+                  <Stack.Screen name="(auth)" options={{ headerShown: false }} />
+                </Stack>
+                <StatusBar style="light" backgroundColor="#000" translucent />
+              </FinancialProvider>
+            </SocialProvider>
           </ProfileProvider>
         </AuthProvider>
       </BottomSheetModalProvider>
