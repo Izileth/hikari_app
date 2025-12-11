@@ -1,13 +1,36 @@
-
-import { ThemedText } from '@/components/themed-text';
-import { ThemedView } from '@/components/themed-view';
 import React, { useState, useEffect } from 'react';
-import { StyleSheet, TextInput, TouchableOpacity, ActivityIndicator, Alert, View, FlatList } from 'react-native';
+import { View, Text, TextInput, TouchableOpacity, ActivityIndicator, Alert, ScrollView } from 'react-native';
 import { useSocial } from '@/context/SocialContext';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { Database } from '@/lib/database.types';
 import CustomHeader from '@/components/ui/CustomHeader';
 import { useFinancials } from '@/context/FinancialContext';
+import Svg, { Path } from 'react-native-svg';
+
+// Icons
+const PaperclipIcon = ({ size = 20 }) => (
+    <Svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <Path d="M21.44 11.05l-9.19 9.19a6 6 0 01-8.49-8.49l9.19-9.19a4 4 0 015.66 5.66l-9.2 9.19a2 2 0 01-2.83-2.83l8.49-8.48" />
+    </Svg>
+);
+
+const CheckIcon = ({ size = 20 }) => (
+    <Svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <Path d="M20 6L9 17l-5-5" />
+    </Svg>
+);
+
+const ArrowUpIcon = ({ size = 16 }) => (
+    <Svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <Path d="M12 19V5M5 12l7-7 7 7" />
+    </Svg>
+);
+
+const ArrowDownIcon = ({ size = 16 }) => (
+    <Svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <Path d="M12 5v14M19 12l-7 7-7-7" />
+    </Svg>
+);
 
 export default function EditPostScreen() {
     const params = useLocalSearchParams();
@@ -20,10 +43,8 @@ export default function EditPostScreen() {
     const [description, setDescription] = useState('');
     const [loading, setLoading] = useState(false);
     const [originalPost, setOriginalPost] = useState<Database['public']['Tables']['feed_posts']['Row'] | null>(null);
-
     const [showFinancialAttachment, setShowFinancialAttachment] = useState(false);
     const [selectedTransactionId, setSelectedTransactionId] = useState<number | null>(null);
-
 
     useEffect(() => {
         if (postId && posts.length > 0) {
@@ -34,26 +55,26 @@ export default function EditPostScreen() {
                 setDescription(postToEdit.description || '');
 
                 if (postToEdit.shared_data && typeof postToEdit.shared_data === 'object' && 'transaction_id' in postToEdit.shared_data) {
-                    setSelectedTransactionId(parseInt((postToEdit.shared_data as { transaction_id: string }).transaction_id)); // Parse back to number
+                    setSelectedTransactionId(parseInt((postToEdit.shared_data as { transaction_id: string }).transaction_id));
                     setShowFinancialAttachment(true);
                 }
             } else {
-                Alert.alert('Erro', 'Postagem não encontrada.');
+                Alert.alert('Erro', 'Postagem não encontrada');
                 router.back();
             }
         } else if (!postId) {
-            Alert.alert('Erro', 'ID da postagem não fornecido.');
+            Alert.alert('Erro', 'ID da postagem não fornecido');
             router.back();
         }
     }, [postId, posts]);
 
     const handleUpdatePost = async () => {
         if (!originalPost) {
-            Alert.alert('Erro', 'Postagem original não carregada.');
+            Alert.alert('Erro', 'Postagem original não carregada');
             return;
         }
         if (!title.trim()) {
-            Alert.alert('Erro', 'O título é obrigatório.');
+            Alert.alert('Atenção', 'O título é obrigatório');
             return;
         }
 
@@ -64,7 +85,7 @@ export default function EditPostScreen() {
             const selectedTransaction = transactions.find(t => t.id === selectedTransactionId);
             if (selectedTransaction) {
                 shared_data = {
-                    transaction_id: selectedTransaction.id.toString(), // Convert to string
+                    transaction_id: selectedTransaction.id.toString(),
                     amount: selectedTransaction.amount,
                     description: selectedTransaction.description,
                     transaction_date: selectedTransaction.transaction_date,
@@ -75,7 +96,6 @@ export default function EditPostScreen() {
         const updates = {
             title,
             description,
-            // privacy_level: originalPost.privacy_level, // Keep original or add UI to change
             shared_data: shared_data,
         };
 
@@ -89,172 +109,157 @@ export default function EditPostScreen() {
         }
     };
 
-    if (socialLoading || financialsLoading || !originalPost && postId) {
+    if (socialLoading || financialsLoading || (!originalPost && postId)) {
         return (
-            <ThemedView style={styles.container}>
+            <View className="flex-1 bg-black">
                 <CustomHeader />
-                <View style={styles.loadingContainer}>
-                    <ActivityIndicator color="#FFFFFF" size="large" />
-                    <ThemedText style={styles.loadingText}>Carregando postagem...</ThemedText>
+                <View className="flex-1 justify-center items-center">
+                    <ActivityIndicator color="#ffffff" size="large" />
+                    <Text className="text-white/60 mt-4">Carregando postagem...</Text>
                 </View>
-            </ThemedView>
+            </View>
         );
     }
 
+    return (
+        <View className="flex-1 bg-black">
+            <CustomHeader />
+            <ScrollView className="flex-1">
+                <View className="p-6">
+                    {/* Title Input */}
+                    <View className="mb-6">
+                        <Text className="text-white/60 text-sm mb-2">Título</Text>
+                        <View className="border border-white/20 rounded-lg">
+                            <TextInput
+                                className="px-4 py-4 text-white text-base"
+                                placeholder="Título do post"
+                                placeholderTextColor="#666666"
+                                value={title}
+                                onChangeText={setTitle}
+                            />
+                        </View>
+                    </View>
 
-  return (
-    <ThemedView style={styles.container}>
-        <CustomHeader />
-        <View style={styles.formContainer}>
-            <TextInput
-                style={styles.input}
-                placeholder="Título"
-                placeholderTextColor="#8E8E93"
-                value={title}
-                onChangeText={setTitle}
-            />
-            <TextInput
-                style={[styles.input, styles.textArea]}
-                placeholder="No que você está pensando?"
-                placeholderTextColor="#8E8E93"
-                value={description}
-                onChangeText={setDescription}
-                multiline
-            />
+                    {/* Description Input */}
+                    <View className="mb-6">
+                        <Text className="text-white/60 text-sm mb-2">Descrição</Text>
+                        <View className="border border-white/20 rounded-lg">
+                            <TextInput
+                                className="px-4 py-4 text-white text-base min-h-[120px]"
+                                placeholder="No que você está pensando?"
+                                placeholderTextColor="#666666"
+                                value={description}
+                                onChangeText={setDescription}
+                                multiline
+                                textAlignVertical="top"
+                            />
+                        </View>
+                    </View>
 
-            <TouchableOpacity 
-                style={styles.attachButton} 
-                onPress={() => setShowFinancialAttachment(!showFinancialAttachment)}
-            >
-                <ThemedText style={styles.attachButtonText}>
-                    {showFinancialAttachment ? 'Ocultar Anexo Financeiro' : 'Anexar Dados Financeiros'}
-                </ThemedText>
-            </TouchableOpacity>
+                    {/* Attach Financial Data Button */}
+                    <TouchableOpacity 
+                        className="flex-row items-center justify-center border border-white/20 rounded-lg py-3 mb-6"
+                        onPress={() => setShowFinancialAttachment(!showFinancialAttachment)}
+                        activeOpacity={0.7}
+                    >
+                        <PaperclipIcon size={18} />
+                        <Text className="text-white font-medium ml-2">
+                            {showFinancialAttachment ? 'Ocultar Transações' : 'Anexar Transação'}
+                        </Text>
+                    </TouchableOpacity>
 
-            {showFinancialAttachment && (
-                <View style={styles.financialAttachmentContainer}>
-                    {financialsLoading ? (
-                        <ActivityIndicator color="#FFFFFF" size="small" />
-                    ) : (
-                        <FlatList
-                            data={transactions}
-                            keyExtractor={(item) => item.id.toString()}
-                            renderItem={({ item }) => (
-                                <TouchableOpacity
-                                    style={[
-                                        styles.transactionItem,
-                                        selectedTransactionId === item.id && styles.selectedTransactionItem,
-                                    ]}
-                                    onPress={() => setSelectedTransactionId(item.id === selectedTransactionId ? null : item.id)}
-                                >
-                                    <ThemedText style={styles.transactionDescription}>{item.description}</ThemedText>
-                                    <ThemedText style={styles.transactionAmount}>
-                                        R$ {parseFloat(item.amount).toFixed(2)}
-                                    </ThemedText>
-                                </TouchableOpacity>
+                    {/* Financial Attachment List */}
+                    {showFinancialAttachment && (
+                        <View className="mb-6">
+                            <Text className="text-white/60 text-sm mb-3">Selecione uma transação</Text>
+                            {financialsLoading ? (
+                                <View className="py-8 items-center">
+                                    <ActivityIndicator color="#ffffff" size="small" />
+                                </View>
+                            ) : transactions.length > 0 ? (
+                                <View className="border border-white/20 rounded-lg overflow-hidden">
+                                    {transactions.slice(0, 5).map((item, index) => {
+                                        const isSelected = selectedTransactionId === item.id;
+                                        const isIncome = Number(item.amount) > 0;
+                                        
+                                        return (
+                                            <TouchableOpacity
+                                                key={item.id}
+                                                className={`flex-row items-center justify-between p-4 ${
+                                                    index !== transactions.length - 1 ? 'border-b border-white/10' : ''
+                                                } ${isSelected ? 'bg-white/10' : ''}`}
+                                                onPress={() => setSelectedTransactionId(isSelected ? null : item.id)}
+                                                activeOpacity={0.7}
+                                            >
+                                                <View className="flex-row items-center flex-1 mr-4">
+                                                    <View className={`w-8 h-8 rounded-full items-center justify-center mr-3 ${
+                                                        isIncome ? 'bg-white/10' : 'bg-white/10'
+                                                    }`}>
+                                                        {isIncome ? <ArrowUpIcon size={14} /> : <ArrowDownIcon size={14} />}
+                                                    </View>
+                                                    <View className="flex-1">
+                                                        <Text className="text-white font-medium text-base" numberOfLines={1}>
+                                                            {item.description}
+                                                        </Text>
+                                                        <Text className="text-white/40 text-xs mt-0.5">
+                                                            {new Date(item.transaction_date).toLocaleDateString('pt-BR')}
+                                                        </Text>
+                                                    </View>
+                                                </View>
+                                                <View className="flex-row items-center gap-3">
+                                                    <Text className="text-white font-bold text-base">
+                                                        {new Intl.NumberFormat('pt-BR', { 
+                                                            style: 'currency', 
+                                                            currency: 'BRL' 
+                                                        }).format(Math.abs(Number(item.amount)))}
+                                                    </Text>
+                                                    {isSelected && (
+                                                        <View className="w-6 h-6 rounded-full bg-white items-center justify-center">
+                                                            <CheckIcon size={14} />
+                                                        </View>
+                                                    )}
+                                                </View>
+                                            </TouchableOpacity>
+                                        );
+                                    })}
+                                </View>
+                            ) : (
+                                <View className="border border-white/20 rounded-lg p-8 items-center">
+                                    <Text className="text-white/40 text-center">
+                                        Nenhuma transação disponível
+                                    </Text>
+                                </View>
                             )}
-                            ListEmptyComponent={<ThemedText style={styles.emptyListText}>Nenhuma transação disponível.</ThemedText>}
-                        />
+                        </View>
                     )}
+
+                    {/* Selected Transaction Info */}
+                    {selectedTransactionId && (
+                        <View className="bg-white/5 border border-white/20 rounded-lg p-4 mb-6">
+                            <Text className="text-white/60 text-xs mb-1">Transação anexada</Text>
+                            <Text className="text-white font-medium">
+                                {transactions.find(t => t.id === selectedTransactionId)?.description}
+                            </Text>
+                        </View>
+                    )}
+
+                    {/* Update Post Button */}
+                    <TouchableOpacity 
+                        className={`rounded-lg py-4 ${loading ? 'bg-white/20' : 'bg-white'}`}
+                        onPress={handleUpdatePost} 
+                        disabled={loading}
+                        activeOpacity={0.7}
+                    >
+                        {loading ? (
+                            <ActivityIndicator color="#ffffff" />
+                        ) : (
+                            <Text className="text-black text-center font-bold text-base">
+                                Atualizar Post
+                            </Text>
+                        )}
+                    </TouchableOpacity>
                 </View>
-            )}
-
-            <TouchableOpacity style={styles.button} onPress={handleUpdatePost} disabled={loading}>
-                {loading ? (
-                <ActivityIndicator color="#FFFFFF" />
-                ) : (
-                <ThemedText style={styles.buttonText}>Atualizar Post</ThemedText>
-                )}
-            </TouchableOpacity>
+            </ScrollView>
         </View>
-    </ThemedView>
-  );
+    );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#000',
-  },
-  formContainer: {
-    padding: 16,
-  },
-  input: {
-    backgroundColor: '#1C1C1E',
-    color: '#FFFFFF',
-    padding: 16,
-    borderRadius: 8,
-    fontSize: 16,
-    marginBottom: 16,
-  },
-  textArea: {
-    height: 120,
-    textAlignVertical: 'top',
-  },
-  button: {
-    backgroundColor: '#FFFFFF',
-    padding: 16,
-    borderRadius: 8,
-    alignItems: 'center',
-  },
-  buttonText: {
-    color: '#000000',
-    fontWeight: 'bold',
-    fontSize: 16,
-  },
-  attachButton: {
-    backgroundColor: '#333333',
-    padding: 12,
-    borderRadius: 8,
-    alignItems: 'center',
-    marginBottom: 16,
-  },
-  attachButtonText: {
-    color: '#FFFFFF',
-    fontWeight: 'bold',
-    fontSize: 14,
-  },
-  financialAttachmentContainer: {
-    backgroundColor: '#1C1C1E',
-    borderRadius: 8,
-    padding: 10,
-    marginBottom: 16,
-    maxHeight: 200, // Limit height to avoid excessive scrolling
-  },
-  transactionItem: {
-    paddingVertical: 10,
-    paddingHorizontal: 10,
-    borderBottomWidth: 1,
-    borderBottomColor: '#333333',
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-  },
-  selectedTransactionItem: {
-    backgroundColor: '#007AFF', // Highlight color for selected item
-  },
-  transactionDescription: {
-    color: '#FFFFFF',
-    fontSize: 14,
-    flex: 1,
-  },
-  transactionAmount: {
-    color: '#FFFFFF',
-    fontSize: 14,
-    fontWeight: 'bold',
-  },
-  emptyListText: {
-    color: '#8E8E93',
-    textAlign: 'center',
-    paddingVertical: 20,
-  },
-  loadingContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  loadingText: {
-    marginTop: 10,
-    color: '#FFFFFF',
-  }
-});
