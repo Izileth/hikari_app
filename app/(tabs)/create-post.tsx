@@ -44,7 +44,7 @@ export default function CreatePostScreen() {
             if (selectedTransaction) {
                 // Construct shared_data based on the selected transaction
                 shared_data = {
-                    transaction_id: selectedTransaction.id,
+                    transaction_id: selectedTransaction.id.toString(), // Convert to string
                     amount: selectedTransaction.amount,
                     description: selectedTransaction.description,
                     transaction_date: selectedTransaction.transaction_date,

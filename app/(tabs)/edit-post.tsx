@@ -34,7 +34,7 @@ export default function EditPostScreen() {
                 setDescription(postToEdit.description || '');
 
                 if (postToEdit.shared_data && typeof postToEdit.shared_data === 'object' && 'transaction_id' in postToEdit.shared_data) {
-                    setSelectedTransactionId((postToEdit.shared_data as { transaction_id: number }).transaction_id);
+                    setSelectedTransactionId(parseInt((postToEdit.shared_data as { transaction_id: string }).transaction_id)); // Parse back to number
                     setShowFinancialAttachment(true);
                 }
             } else {
@@ -64,7 +64,7 @@ export default function EditPostScreen() {
             const selectedTransaction = transactions.find(t => t.id === selectedTransactionId);
             if (selectedTransaction) {
                 shared_data = {
-                    transaction_id: selectedTransaction.id,
+                    transaction_id: selectedTransaction.id.toString(), // Convert to string
                     amount: selectedTransaction.amount,
                     description: selectedTransaction.description,
                     transaction_date: selectedTransaction.transaction_date,
