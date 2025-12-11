@@ -1,4 +1,5 @@
 import { View, Text, Animated } from "react-native";
+import { useRouter } from "expo-router";
 import { useEffect, useRef } from "react";
 import Svg, { Path, Circle } from 'react-native-svg';
 
@@ -11,6 +12,8 @@ const FinanceLogoIcon = ({ size = 120 }: { size?: number }) => (
 );
 
 export default function SplashScreen() {
+  const router = useRouter();
+
   // Animations
   const fadeAnim = useRef(new Animated.Value(0)).current;
   const scaleAnim = useRef(new Animated.Value(0.8)).current;
@@ -34,8 +37,14 @@ export default function SplashScreen() {
         duration: 1000,
         useNativeDriver: true,
       }),
-    ]).start();
-  }, [fadeAnim, scaleAnim, slideAnim]);
+    ]).start(() => {
+      // Callback executado quando todas as animações terminam
+      // Aguarda mais 1 segundo após as animações antes de navegar
+      setTimeout(() => {
+        router.replace("/redirector");
+      }, 3000);
+    });
+  }, [fadeAnim, router, scaleAnim, slideAnim]);
 
   return (
     <View className="flex-1 bg-black justify-center items-center">
