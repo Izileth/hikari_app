@@ -6,8 +6,9 @@ import { useFinancials } from "../../context/FinancialContext";
 import * as ImagePicker from 'expo-image-picker';
 import Svg, { Path, Circle } from 'react-native-svg';
 import { LineChart, BarChart, PieChart } from "react-native-chart-kit";
-import CustomHeader from "@/components/ui/CustomHeader";
+
 import { useRouter } from "expo-router";
+import CustomHeader, { PlusSquareIcon } from "@/components/ui/CustomHeader";
 
 const screenWidth = Dimensions.get("window").width;
 
@@ -356,6 +357,15 @@ export default function ProfileScreen() {
                                 <EditIcon size={16} />
                                 <Text className="text-white font-medium ml-2">
                                     Editar
+                                </Text>
+                            </TouchableOpacity>
+                            <TouchableOpacity
+                                onPress={() => router.push('/(tabs)/create-post')}
+                                className="flex-1 flex-row items-center justify-center py-3 border border-white/20 rounded-lg"
+                            >
+                                <PlusSquareIcon size={16} />
+                                <Text className="text-white font-medium ml-2">
+                                    Postar
                                 </Text>
                             </TouchableOpacity>
                             <TouchableOpacity

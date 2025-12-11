@@ -1,9 +1,12 @@
 
 import React from 'react';
-import { View, Image, StyleSheet } from 'react-native';
+import { View, Image, StyleSheet, TouchableOpacity, Alert } from 'react-native';
 import { Post } from '@/lib/social';
 import { ThemedText } from '../themed-text';
 import { Svg, Path } from 'react-native-svg';
+import { useProfile } from '@/context/ProfileContext';
+import { useSocial } from '@/context/SocialContext';
+import { useRouter } from 'expo-router';
 
 const HeartIcon = ({ size = 16, color = "white" }) => (
     <Svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -17,12 +20,52 @@ const MessageCircleIcon = ({ size = 16, color = "white" }) => (
     </Svg>
 );
 
+const EditIcon = ({ size = 16, color = "white" }) => (
+    <Svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <Path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z" />
+    </Svg>
+);
+
+const TrashIcon = ({ size = 16, color = "white" }) => (
+    <Svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <Path d="M3 6h18M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2" />
+    </Svg>
+);
+
 export default function PostCard({ post }: { post: Post }) {
-  const getInitials = (name: string) => {
-    if (!name) return '?';
-    const names = name.trim().split(' ');
-    if (names.length === 1) return names[0][0].toUpperCase();
-    return (names[0][0] + names[names.length - 1][0]).toUpperCase();
+  const { profile } = useProfile();
+  const { deletePost, refreshFeed } = useSocial();
+  const router = useRouter();
+
+  const isOwner = profile?.id === post.profile_id;
+
+  const handleDelete = () => {
+    Alert.alert(
+      "Confirmar Exclusão",
+      "Tem certeza que deseja excluir esta postagem?",
+      [
+        { text: "Cancelar", style: "cancel" },
+        {
+          text: "Excluir",
+          style: "destructive",
+          onPress: async () => {
+            const { error } = await deletePost(post.id);
+            if (error) {
+              Alert.alert("Erro", "Falha ao excluir postagem: " + error.message);
+            } else {
+              refreshFeed(); // Refresh the feed after deletion
+            }
+          },
+        },
+      ]
+    );
+  };
+
+  const handleEdit = () => {
+    router.push({
+      pathname: "/edit-post",
+      params: { postId: post.id.toString() },
+    });
   };
 
   const renderContent = () => {
@@ -53,10 +96,20 @@ export default function PostCard({ post }: { post: Post }) {
             <ThemedText style={styles.initials}>{getInitials(post.profiles?.name || '')}</ThemedText>
           )}
         </View>
-        <View>
+        <View style={{ flex: 1 }}> {/* Added flex: 1 to make space for buttons */}
           <ThemedText type="defaultSemiBold">{post.profiles?.name}</ThemedText>
           {post.profiles?.nickname && <ThemedText style={styles.nickname}>@{post.profiles.nickname}</ThemedText>}
         </View>
+        {isOwner && (
+          <View style={styles.ownerActions}>
+            <TouchableOpacity onPress={handleEdit} style={styles.actionButton}>
+              <EditIcon size={18} color="#8E8E93" />
+            </TouchableOpacity>
+            <TouchableOpacity onPress={handleDelete} style={styles.actionButton}>
+              <TrashIcon size={18} color="#FF453A" />
+            </TouchableOpacity>
+          </View>
+        )}
       </View>
 
       {renderContent()}
@@ -147,5 +200,12 @@ const styles = StyleSheet.create({
   footerText: {
     marginLeft: 6,
     color: '#8E8E93',
-  }
+  },
+  ownerActions: {
+    flexDirection: 'row',
+    gap: 10,
+  },
+  actionButton: {
+    padding: 5,
+  },
 });

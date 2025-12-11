@@ -21,6 +21,7 @@ export default function AppLayout() {
       <Stack.Screen name="financials" />
       <Stack.Screen name="feed" />
       <Stack.Screen name="create-post" />
+      <Stack.Screen name="edit-post" />
       <Stack.Screen name="edit-profile" />
       <Stack.Screen name="financial-settings" />
     </Stack>

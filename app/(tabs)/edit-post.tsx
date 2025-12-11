@@ -9,59 +9,98 @@ import { Database } from '@/lib/database.types';
 import CustomHeader from '@/components/ui/CustomHeader';
 import { useFinancials } from '@/context/FinancialContext';
 
-export default function CreatePostScreen() {
-    const params = useLocalSearchParams<{ title?: string; description?: string, type?: string }>();
-    const [title, setTitle] = useState('');
-    const [description, setDescription] = useState('');
-    const [loading, setLoading] = useState(false);
-    const [selectedTransactionId, setSelectedTransactionId] = useState<number | null>(null);
-    const [showFinancialAttachment, setShowFinancialAttachment] = useState(false);
-    const { createPost } = useSocial();
+export default function EditPostScreen() {
+    const params = useLocalSearchParams();
+    const postId = params.postId ? parseInt(params.postId as string) : null;
+    const { posts, updatePost, loading: socialLoading } = useSocial();
     const { transactions, loading: financialsLoading } = useFinancials();
     const router = useRouter();
 
-    useEffect(() => {
-        if (params.title) {
-            setTitle(params.title);
-        }
-        if (params.description) {
-            setDescription(params.description);
-        }
-    }, [params]);
+    const [title, setTitle] = useState('');
+    const [description, setDescription] = useState('');
+    const [loading, setLoading] = useState(false);
+    const [originalPost, setOriginalPost] = useState<Database['public']['Tables']['feed_posts']['Row'] | null>(null);
 
-    const handleCreatePost = async () => {
+    const [showFinancialAttachment, setShowFinancialAttachment] = useState(false);
+    const [selectedTransactionId, setSelectedTransactionId] = useState<number | null>(null);
+
+
+    useEffect(() => {
+        if (postId && posts.length > 0) {
+            const postToEdit = posts.find(p => p.id === postId);
+            if (postToEdit) {
+                setOriginalPost(postToEdit);
+                setTitle(postToEdit.title || '');
+                setDescription(postToEdit.description || '');
+
+                if (postToEdit.shared_data && typeof postToEdit.shared_data === 'object' && 'transaction_id' in postToEdit.shared_data) {
+                    setSelectedTransactionId((postToEdit.shared_data as { transaction_id: number }).transaction_id);
+                    setShowFinancialAttachment(true);
+                }
+            } else {
+                Alert.alert('Erro', 'Postagem não encontrada.');
+                router.back();
+            }
+        } else if (!postId) {
+            Alert.alert('Erro', 'ID da postagem não fornecido.');
+            router.back();
+        }
+    }, [postId, posts]);
+
+    const handleUpdatePost = async () => {
+        if (!originalPost) {
+            Alert.alert('Erro', 'Postagem original não carregada.');
+            return;
+        }
         if (!title.trim()) {
             Alert.alert('Erro', 'O título é obrigatório.');
             return;
         }
 
         setLoading(true);
-        const post_type = params.type as Database['public']['Enums']['feed_post_type'] || 'manual';
         
         let shared_data: any = undefined;
         if (selectedTransactionId) {
             const selectedTransaction = transactions.find(t => t.id === selectedTransactionId);
             if (selectedTransaction) {
-                // Construct shared_data based on the selected transaction
                 shared_data = {
                     transaction_id: selectedTransaction.id,
                     amount: selectedTransaction.amount,
                     description: selectedTransaction.description,
                     transaction_date: selectedTransaction.transaction_date,
-                    // Add other relevant transaction details for sharing
                 };
             }
         }
 
-        const { error } = await createPost({ title, description, post_type, shared_data });
+        const updates = {
+            title,
+            description,
+            // privacy_level: originalPost.privacy_level, // Keep original or add UI to change
+            shared_data: shared_data,
+        };
+
+        const { error } = await updatePost(originalPost.id, updates);
         setLoading(false);
 
         if (error) {
-            Alert.alert('Erro', 'Falha ao criar post: ' + error.message);
+            Alert.alert('Erro', 'Falha ao atualizar post: ' + error.message);
         } else {
             router.back();
         }
     };
+
+    if (socialLoading || financialsLoading || !originalPost && postId) {
+        return (
+            <ThemedView style={styles.container}>
+                <CustomHeader />
+                <View style={styles.loadingContainer}>
+                    <ActivityIndicator color="#FFFFFF" size="large" />
+                    <ThemedText style={styles.loadingText}>Carregando postagem...</ThemedText>
+                </View>
+            </ThemedView>
+        );
+    }
+
 
   return (
     <ThemedView style={styles.container}>
@@ -69,14 +108,14 @@ export default function CreatePostScreen() {
         <View style={styles.formContainer}>
             <TextInput
                 style={styles.input}
-                placeholder="Title"
+                placeholder="Título"
                 placeholderTextColor="#8E8E93"
                 value={title}
                 onChangeText={setTitle}
             />
             <TextInput
                 style={[styles.input, styles.textArea]}
-                placeholder="What's on your mind?"
+                placeholder="No que você está pensando?"
                 placeholderTextColor="#8E8E93"
                 value={description}
                 onChangeText={setDescription}
@@ -120,11 +159,11 @@ export default function CreatePostScreen() {
                 </View>
             )}
 
-            <TouchableOpacity style={styles.button} onPress={handleCreatePost} disabled={loading}>
+            <TouchableOpacity style={styles.button} onPress={handleUpdatePost} disabled={loading}>
                 {loading ? (
                 <ActivityIndicator color="#FFFFFF" />
                 ) : (
-                <ThemedText style={styles.buttonText}>Post</ThemedText>
+                <ThemedText style={styles.buttonText}>Atualizar Post</ThemedText>
                 )}
             </TouchableOpacity>
         </View>
@@ -209,4 +248,13 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     paddingVertical: 20,
   },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  loadingText: {
+    marginTop: 10,
+    color: '#FFFFFF',
+  }
 });

@@ -54,3 +54,35 @@ export const createPost = async (post: {
 
     return getFeedPosts();
 }
+
+export const updatePost = async (post_id: number, updates: {
+    title?: string;
+    description?: string;
+    privacy_level?: Database['public']['Enums']['post_privacy_level'];
+    shared_data?: any;
+}) => {
+    const { data, error } = await supabase
+        .from('feed_posts')
+        .update(updates)
+        .eq('id', post_id)
+        .select();
+
+    if (error) {
+        console.error('Error updating post:', error);
+        return { data: null, error };
+    }
+    return { data, error: null };
+};
+
+export const deletePost = async (post_id: number) => {
+    const { error } = await supabase
+        .from('feed_posts')
+        .delete()
+        .eq('id', post_id);
+
+    if (error) {
+        console.error('Error deleting post:', error);
+        return { error };
+    }
+    return { error: null };
+};

@@ -28,7 +28,7 @@ const WalletIcon = ({ size = 24, active = false }) => (
     </Svg>
 );
 
-const PlusSquareIcon = ({ size = 24 }) => (
+export const PlusSquareIcon = ({ size = 24 }) => (
     <Svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
         <Rect x="3" y="3" width="18" height="18" rx="2" ry="2" />
         <Path d="M12 8v8M8 12h8" />
@@ -96,15 +96,13 @@ export default function CustomHeader() {
 
                 {/* Right Side - Action Button & Profile */}
                 <View className="flex-row items-center gap-3">
-                    {pathname === '/(tabs)/feed' && (
-                        <TouchableOpacity
-                            onPress={() => handleNavigation('/(tabs)/create-post')}
-                            activeOpacity={0.7}
-                            className="p-1"
-                        >
-                            <PlusSquareIcon size={22} />
-                        </TouchableOpacity>
-                    )}
+                    <TouchableOpacity
+                        onPress={() => handleNavigation('/(tabs)/create-post')}
+                        activeOpacity={0.7}
+                        className="p-1"
+                    >
+                        <PlusSquareIcon size={22} />
+                    </TouchableOpacity>
 
                     {/* Profile Avatar */}
                     <TouchableOpacity
