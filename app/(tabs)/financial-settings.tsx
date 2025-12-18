@@ -4,14 +4,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import AccountManager from '../../components/financials/AccountManager';
 import CategoryManager from '../../components/financials/CategoryManager';
 import { useRouter } from 'expo-router';
-import Svg, { Path } from 'react-native-svg';
-
-const BackIcon = ({ size = 24, color = "white" }) => (
-    <Svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-        <Path d="M19 12H5M12 19l-7-7 7-7" />
-    </Svg>
-);
-
+import { BackIcon } from '../../components/ui/Icons';
 export default function FinancialSettingsScreen() {
     const router = useRouter();
     const [activeTab, setActiveTab] = useState<'accounts' | 'categories'>('accounts');

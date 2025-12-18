@@ -64,28 +64,30 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
   useEffect(() => {
     setLoading(true);
-    // Fetch the initial session
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setSession(session);
-      setUser(session?.user ?? null);
-      if (session?.user) {
-        fetchProfile(session.user).finally(() => setLoading(false));
-      } else {
+    
+    supabase.auth.getSession()
+      .then(({ data: { session } }) => {
+        setSession(session);
+        setUser(session?.user ?? null);
+        if (session?.user) {
+          return fetchProfile(session.user);
+        }
+      })
+      .catch(err => {
+        console.error("Error in initial auth load:", err);
+      })
+      .finally(() => {
         setLoading(false);
-      }
-    });
+      });
 
-    // Subscribe to auth state changes
     const { data: authListener } = supabase.auth.onAuthStateChange(
       async (_event, session) => {
         setSession(session);
         setUser(session?.user ?? null);
         
         if (session?.user) {
-          // Fetch profile when session becomes available or changes
           await fetchProfile(session.user);
         } else {
-          // Clear profile on sign out
           setProfile(null);
         }
       }

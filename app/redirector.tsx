@@ -19,7 +19,7 @@ export default function RedirectorScreen() {
   }
 
   if (session) {
-    return <Redirect href="/(tabs)/profile" />;
+    return <Redirect href="/(tabs)/feed" />;
   }
 
   return <Redirect href="/(auth)/login" />;

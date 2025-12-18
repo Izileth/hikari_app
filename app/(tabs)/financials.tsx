@@ -7,19 +7,7 @@ import TransactionForm from "../../components/financials/TransactionForm";
 import CategoryManager from "../../components/financials/CategoryManager";
 import AccountManager from "../../components/financials/AccountManager";
 import CustomHeader from "@/components/ui/CustomHeader";
-import Svg, { Path } from 'react-native-svg';
-
-const PlusIcon = ({ size = 24, color = "white" }) => (
-    <Svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-        <Path d="M12 5v14M5 12h14" />
-    </Svg>
-);
-
-const CogIcon = ({ size = 20, color = "white" }) => (
-    <Svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-      <Path d="M12 20V10M12 20a8 8 0 100-16 8 8 0 000 16zM12 9a1 1 0 100-2 1 1 0 000 2z"/>
-    </Svg>
-  );
+import { PlusIcon, CogIcon } from "../../components/ui/Icons";
 
 export default function FinancialsScreen() {
     const { accounts, transactions, categories, loading, error, refetch } = useFinancials();

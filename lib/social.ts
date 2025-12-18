@@ -4,8 +4,10 @@ import { Database } from './database.types';
 
 export type Post = Database['public']['Tables']['feed_posts']['Row'] & {
   profiles: Pick<Database['public']['Tables']['profiles']['Row'], 'id' | 'name' | 'nickname' | 'avatar_url'> | null;
+  post_likes: { profile_id: number }[];
   like_count: number;
   comment_count: number;
+  user_has_liked?: boolean; // Will be set in the context
 };
 
 export const getFeedPosts = async (): Promise<{ data: Post[] | null, error: Error | null }> => {
@@ -14,7 +16,7 @@ export const getFeedPosts = async (): Promise<{ data: Post[] | null, error: Erro
     .select(`
       *,
       profiles (id, name, nickname, avatar_url),
-      post_likes ( count ),
+      post_likes ( profile_id ),
       post_comments ( count )
     `)
     .order('created_at', { ascending: false });
@@ -24,12 +26,21 @@ export const getFeedPosts = async (): Promise<{ data: Post[] | null, error: Erro
     return { data: null, error: new Error(error.message) };
   }
 
-  const posts = data.map(post => ({
-    ...post,
-    like_count: post.post_likes[0]?.count ?? 0,
-    comment_count: post.post_comments[0]?.count ?? 0,
-    profiles: Array.isArray(post.profiles) ? post.profiles[0] : post.profiles,
-  }));
+  const posts = data.map(post => {
+    // The 'post_likes' field will be an array of objects like { profile_id: ... }
+    const like_count = post.post_likes.length;
+
+    // The 'post_comments' with '(count)' gives an array with a single object: [{ count: N }]
+    const comment_count = post.post_comments[0]?.count ?? 0;
+
+    return {
+      ...post,
+      profiles: Array.isArray(post.profiles) ? post.profiles[0] : post.profiles,
+      post_likes: post.post_likes, // Keep the array of likes
+      like_count: like_count,
+      comment_count: comment_count,
+    };
+  });
 
   // @ts-ignore
   return { data: posts, error: null };
@@ -85,4 +96,113 @@ export const deletePost = async (post_id: number) => {
         return { error };
     }
     return { error: null };
+};
+
+export const toggleLike = async (postId: number, profileId: number) => {
+    // Check if the like exists
+    const { data: existingLike, error: selectError } = await supabase
+        .from('post_likes')
+        .select('id')
+        .eq('post_id', postId)
+        .eq('profile_id', profileId)
+        .single();
+
+    if (selectError && selectError.code !== 'PGRST116') { // PGRST116 = 'single' row not found
+        console.error('Error checking for like:', selectError);
+        return { error: selectError };
+    }
+
+    if (existingLike) {
+        // Like exists, so delete it (unlike)
+        const { error: deleteError } = await supabase
+            .from('post_likes')
+            .delete()
+            .eq('id', existingLike.id);
+        
+        if (deleteError) {
+            console.error('Error unliking post:', deleteError);
+            return { error: deleteError };
+        }
+        return { error: null, liked: false };
+    } else {
+        // Like does not exist, so create it (like)
+        const { error: insertError } = await supabase
+            .from('post_likes')
+            .insert({ post_id: postId, profile_id: profileId });
+
+        if (insertError) {
+            console.error('Error liking post:', insertError);
+            return { error: insertError };
+        }
+        return { error: null, liked: true };
+    }
+};
+
+export type Comment = Database['public']['Tables']['post_comments']['Row'] & {
+    profiles: Pick<Database['public']['Tables']['profiles']['Row'], 'id' | 'name' | 'nickname' | 'avatar_url'> | null;
+};
+
+export const getComments = async (postId: number): Promise<{ data: Comment[] | null, error: Error | null }> => {
+    const { data, error } = await supabase
+        .from('post_comments')
+        .select(`
+            *,
+            profiles (id, name, nickname, avatar_url)
+        `)
+        .eq('post_id', postId)
+        .order('created_at', { ascending: true });
+
+    if (error) {
+        console.error('Error fetching comments:', error);
+        return { data: null, error: new Error(error.message) };
+    }
+    
+    // @ts-ignore
+    return { data, error: null };
+};
+
+export const addComment = async (postId: number, profileId: number, content: string) => {
+    const { data, error } = await supabase
+        .from('post_comments')
+        .insert({
+            post_id: postId,
+            profile_id: profileId,
+            content: content
+        })
+        .select()
+        .single();
+
+    if (error) {
+        console.error('Error adding comment:', error);
+        return { data: null, error };
+    }
+
+    // After adding, fetch the new comment with profile info to return it
+    const { data: newComment, error: fetchError } = await supabase
+        .from('post_comments')
+        .select(`*, profiles (id, name, nickname, avatar_url)`)
+        .eq('id', data.id)
+        .single();
+    
+    return { data: newComment, error: fetchError };
+};
+
+export const updateComment = async (commentId: number, content: string) => {
+    const { data, error } = await supabase
+        .from('post_comments')
+        .update({ content })
+        .eq('id', commentId)
+        .select()
+        .single();
+
+    return { data, error };
+};
+
+export const deleteComment = async (commentId: number) => {
+    const { error } = await supabase
+        .from('post_comments')
+        .delete()
+        .eq('id', commentId);
+
+    return { error };
 };

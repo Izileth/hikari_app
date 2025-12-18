@@ -5,32 +5,7 @@ import { useLocalSearchParams, useRouter } from 'expo-router';
 import { Database } from '@/lib/database.types';
 import CustomHeader from '@/components/ui/CustomHeader';
 import { useFinancials } from '@/context/FinancialContext';
-import Svg, { Path } from 'react-native-svg';
-
-// Icons
-const PaperclipIcon = ({ size = 20 }) => (
-    <Svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-        <Path d="M21.44 11.05l-9.19 9.19a6 6 0 01-8.49-8.49l9.19-9.19a4 4 0 015.66 5.66l-9.2 9.19a2 2 0 01-2.83-2.83l8.49-8.48" />
-    </Svg>
-);
-
-const CheckIcon = ({ size = 20 }) => (
-    <Svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-        <Path d="M20 6L9 17l-5-5" />
-    </Svg>
-);
-
-const ArrowUpIcon = ({ size = 16 }) => (
-    <Svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-        <Path d="M12 19V5M5 12l7-7 7 7" />
-    </Svg>
-);
-
-const ArrowDownIcon = ({ size = 16 }) => (
-    <Svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-        <Path d="M12 5v14M19 12l-7 7-7-7" />
-    </Svg>
-);
+import { PaperclipIcon, ArrowUpIcon, ArrowDownIcon, CheckIcon } from '@/components/ui/Icons';
 
 export default function EditPostScreen() {
     const params = useLocalSearchParams();

@@ -3,47 +3,9 @@ import React, { useState, useEffect } from 'react';
 import { useProfile } from "../../context/ProfileContext";
 import { useFinancials, FinancialTarget, FinancialTargetInsert, FinancialTargetUpdate } from "../../context/FinancialContext";
 import { useRouter } from "expo-router";
-import Svg, { Path } from 'react-native-svg';
 import { CustomPicker } from "../../components/ui/CustomPicker";
+import { BackIcon, EditIcon, TrashIcon, PlusIcon, ShareIcon, TargetIcon } from "../../components/ui/Icons";
 
-// Icons
-const BackIcon = ({ size = 24, color = "white" }) => (
-    <Svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-        <Path d="M19 12H5M12 19l-7-7 7-7" />
-    </Svg>
-);
-
-const PlusIcon = ({ size = 20, color = "white" }) => (
-    <Svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-        <Path d="M12 5v14M5 12h14" />
-    </Svg>
-);
-
-const TrashIcon = ({ size = 18, color = "white" }) => (
-    <Svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-         <Path d="M3 6h18M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6M8 6V4a2 2 0 012-2h4a2 2 0 012 2v2M10 11v6M14 11v6"/>
-    </Svg>
-);
-
-const EditIcon = ({ size = 16, color = "white" }) => (
-    <Svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-        <Path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/>
-    </Svg>
-);
-
-const TargetIcon = ({ size = 40, color = "white" }) => (
-    <Svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-        <Path d="M12 2a10 10 0 100 20 10 10 0 000-20z"/>
-        <Path d="M12 6a6 6 0 100 12 6 6 0 000-12z"/>
-        <Path d="M12 10a2 2 0 100 4 2 2 0 000-4z"/>
-    </Svg>
-);
-
-const ShareIcon = ({ size = 18, color = 'white' }: { size?: number, color?: string }) => (
-    <Svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-        <Path d="M4 12v8a2 2 0 002 2h12a2 2 0 002-2v-8M16 6l-4-4-4 4M12 2v13" />
-    </Svg>
-);
 
 const targetTypes = [
     { label: "Valor (R$)", value: "currency" },
