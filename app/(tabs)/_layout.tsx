@@ -11,7 +11,7 @@ export default function AppLayout() {
 
   // This layout can be deferred because it's not the root layout.
   return (
-    <Stack 
+    <Stack
       screenOptions={{
         headerShown: false,
         contentStyle: { backgroundColor: '#000' },
@@ -24,6 +24,7 @@ export default function AppLayout() {
       <Stack.Screen name="edit-post" />
       <Stack.Screen name="edit-profile" />
       <Stack.Screen name="financial-settings" />
+      <Stack.Screen name="id" />
     </Stack>
   );
 }

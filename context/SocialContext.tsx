@@ -4,6 +4,7 @@ import {
   Post, 
   Comment,
   getFeedPosts as apiGetFeedPosts, 
+  getPostById as apiGetPostById,
   createPost as apiCreatePost, 
   updatePost as apiUpdatePost, 
   deletePost as apiDeletePost,
@@ -19,11 +20,14 @@ import { Database } from '@/lib/database.types';
 
 interface SocialContextType {
   posts: Post[];
+  activePost: Post | null;
   comments: Comment[];
   loading: boolean;
+  loadingActivePost: boolean;
   loadingComments: boolean;
   likingPostId: number | null;
   refreshFeed: () => Promise<void>;
+  fetchPostById: (postId: number) => Promise<void>;
   createPost: (post: { title: string; description: string; post_type?: Database['public']['Enums']['feed_post_type'], shared_data?: any }) => Promise<{ error: Error | null; }>;
   updatePost: (postId: number, updates: { title?: string; description?: string; privacy_level?: Database['public']['Enums']['post_privacy_level']; shared_data?: any }) => Promise<{ error: Error | null; }>;
   deletePost: (postId: number) => Promise<{ error: Error | null; }>;
@@ -38,8 +42,10 @@ const SocialContext = createContext<SocialContextType | undefined>(undefined);
 
 export function SocialProvider({ children }: { children: ReactNode }) {
   const [posts, setPosts] = useState<Post[]>([]);
+  const [activePost, setActivePost] = useState<Post | null>(null);
   const [comments, setComments] = useState<Comment[]>([]);
   const [loading, setLoading] = useState(true);
+  const [loadingActivePost, setLoadingActivePost] = useState(true);
   const [loadingComments, setLoadingComments] = useState(false);
   const [likingPostId, setLikingPostId] = useState<number | null>(null);
   const { profile } = useProfile();
@@ -61,6 +67,26 @@ export function SocialProvider({ children }: { children: ReactNode }) {
       console.error(error);
     }
     setLoading(false);
+  }, [profile]);
+
+  const fetchPostById = useCallback(async (postId: number) => {
+    setLoadingActivePost(true);
+    const { data, error } = await apiGetPostById(postId);
+    if (data && profile) {
+        const processedPost = {
+            ...data,
+            user_has_liked: data.post_likes.some(like => like.profile_id === profile.id)
+        };
+        setActivePost(processedPost);
+    } else if (data) {
+        setActivePost(data);
+    }
+
+    if (error) {
+        console.error(`Error fetching post ${postId}:`, error);
+        setActivePost(null);
+    }
+    setLoadingActivePost(false);
   }, [profile]);
 
   useEffect(() => {
@@ -102,31 +128,41 @@ export function SocialProvider({ children }: { children: ReactNode }) {
 
   const toggleLike = async (postId: number) => {
     if (!profile || likingPostId === postId) return;
-
+  
     setLikingPostId(postId);
-    
+  
+    const updateLikeState = (post: Post | null) => {
+      if (!post) return null;
+      const userHasLiked = post.user_has_liked;
+      return {
+        ...post,
+        like_count: userHasLiked ? post.like_count - 1 : post.like_count + 1,
+        user_has_liked: !userHasLiked,
+      };
+    };
+  
+    // Optimistically update the feed
     setPosts(currentPosts =>
-      currentPosts.map(p => {
-        if (p.id === postId) {
-          const userHasLiked = p.user_has_liked;
-          return {
-            ...p,
-            like_count: userHasLiked ? p.like_count - 1 : p.like_count + 1,
-            user_has_liked: !userHasLiked,
-          };
-        }
-        return p;
-      })
+      currentPosts.map(p => (p.id === postId ? updateLikeState(p)! : p))
     );
-
+  
+    // Optimistically update the active post if it's the one being liked
+    if (activePost && activePost.id === postId) {
+      setActivePost(updateLikeState(activePost));
+    }
+  
     try {
-        await apiToggleLike(postId, profile.id);
+      await apiToggleLike(postId, profile.id);
+      // Optional: Refetch to ensure consistency, though optimistic UI is often enough
+      // await fetchPostById(postId); 
+      // await refreshFeed();
     } catch (error) {
-        console.error("Failed to toggle like, reverting UI.", error);
-        // Revert UI on error
-        await refreshFeed();
+      console.error("Failed to toggle like, reverting UI.", error);
+      // Revert UI on error
+      if (activePost && activePost.id === postId) await fetchPostById(postId);
+      await refreshFeed();
     } finally {
-        setLikingPostId(null);
+      setLikingPostId(null);
     }
   };
   
@@ -150,7 +186,13 @@ export function SocialProvider({ children }: { children: ReactNode }) {
 
     if (newComment) {
       setComments(prevComments => [...prevComments, newComment as Comment]);
-      setPosts(prevPosts => prevPosts.map(p => p.id === postId ? { ...p, comment_count: p.comment_count + 1 } : p));
+      
+      const incrementCommentCount = (p: Post) => ({ ...p, comment_count: p.comment_count + 1 });
+
+      setPosts(prevPosts => prevPosts.map(p => p.id === postId ? incrementCommentCount(p) : p));
+      if (activePost && activePost.id === postId) {
+        setActivePost(incrementCommentCount(activePost));
+      }
     }
     if (error) {
         Alert.alert("Erro", "Não foi possível adicionar o seu comentário.");
@@ -164,23 +206,33 @@ export function SocialProvider({ children }: { children: ReactNode }) {
 
   const deleteComment = async (commentId: number) => {
     const originalComments = comments;
+    const deletedComment = comments.find(c => c.id === commentId);
     setComments(prev => prev.filter(c => c.id !== commentId));
     
     const { error } = await apiDeleteComment(commentId);
     if (error) {
         Alert.alert("Erro", "Não foi possível excluir o comentário.");
         setComments(originalComments); // Revert on failure
+    } else if (deletedComment) {
+      const decrementCommentCount = (p: Post) => ({ ...p, comment_count: Math.max(0, p.comment_count - 1) });
+      setPosts(prevPosts => prevPosts.map(p => p.id === deletedComment.post_id ? decrementCommentCount(p) : p));
+      if (activePost && activePost.id === deletedComment.post_id) {
+        setActivePost(decrementCommentCount(activePost));
+      }
     }
   }
 
   return (
     <SocialContext.Provider value={{ 
-        posts, 
+        posts,
+        activePost,
         comments,
         loading, 
+        loadingActivePost,
         loadingComments,
         likingPostId,
-        refreshFeed, 
+        refreshFeed,
+        fetchPostById,
         createPost, 
         updatePost, 
         deletePost,

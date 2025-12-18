@@ -15,13 +15,22 @@ const getInitials = (name: string) => {
   return (names[0][0] + names[names.length - 1][0]).toUpperCase();
 };
 
-export default function PostCard({ post }: { post: Post }) {
+export default function PostCard({ post, isDetailView = false }: { post: Post, isDetailView?: boolean }) {
   const { profile } = useProfile();
   const { deletePost, toggleLike, fetchComments, likingPostId } = useSocial();
   const router = useRouter();
-  const [showComments, setShowComments] = useState(false);
+  const [showComments, setShowComments] = useState(isDetailView);
 
   const isOwner = profile?.id === post.profile_id;
+
+  const handleNavigate = () => {
+    if (!isDetailView) {
+      router.push({
+        pathname: "/(tabs)/[id]",
+        params: { id: post.id.toString() }
+      });
+    }
+  };
 
   const handleDelete = () => {
     Alert.alert(
@@ -36,6 +45,8 @@ export default function PostCard({ post }: { post: Post }) {
             const { error } = await deletePost(post.id);
             if (error) {
               Alert.alert("Erro", "Falha ao excluir postagem: " + error.message);
+            } else if (isDetailView) {
+              router.back(); // Go back if we delete from the detail view
             }
           },
         },
@@ -44,10 +55,11 @@ export default function PostCard({ post }: { post: Post }) {
   };
 
   const handleToggleComments = () => {
+    if (isDetailView) return; // Comments are always shown in detail view
     const newShowState = !showComments;
     setShowComments(newShowState);
     if (newShowState) {
-        fetchComments(post.id);
+      fetchComments(post.id);
     }
   }
 
@@ -60,66 +72,66 @@ export default function PostCard({ post }: { post: Post }) {
 
   const renderContent = () => {
     if (post.post_type === 'transaction_share') {
-        const details = post.description?.split(', ').map(part => {
-            const [key, ...valueParts] = part.split(': ');
-            return { key: key.trim(), value: valueParts.join(': ').trim() };
-        });
+      const details = post.description?.split(', ').map(part => {
+        const [key, ...valueParts] = part.split(': ');
+        return { key: key.trim(), value: valueParts.join(': ').trim() };
+      });
 
-        const translations: Record<string, string> = {
-            'Type': 'Tipo',
-            'Amount': 'Valor',
-            'Category': 'Categoria',
-            'Date': 'Data',
-            'Description': 'Descrição',
-            'Expense': 'Despesa',
-            'Income': 'Receita',
-        };
+      const translations: Record<string, string> = {
+        'Type': 'Tipo',
+        'Amount': 'Valor',
+        'Category': 'Categoria',
+        'Date': 'Data',
+        'Description': 'Descrição',
+        'Expense': 'Despesa',
+        'Income': 'Receita',
+      };
 
-        const translatedTitle = 'Compartilhou uma transação';
+      const translatedTitle = 'Compartilhou uma transação';
 
-        return (
-            <View className="bg-black border border-white/10 rounded-lg p-4 my-3">
-                <Text className="text-white font-bold text-base mb-3">{translatedTitle}</Text>
-                {details?.map(({ key, value }, index) => {
-                    const translatedKey = translations[key] || key;
-                    let displayValue = (translations[value] || value);
+      return (
+        <View className="bg-black border border-white/10 rounded-lg p-4 my-3">
+          <Text className="text-white font-bold text-base mb-3">{translatedTitle}</Text>
+          {details?.map(({ key, value }, index) => {
+            const translatedKey = translations[key] || key;
+            let displayValue = (translations[value] || value);
 
-                    if (key === 'Amount') {
-                        // Handle numbers that might have thousand separators (.) and/or decimal commas (,)
-                        // e.g., "5.000,50" -> 5000.50
-                        const cleanedValue = value.replace(/\./g, '').replace(',', '.');
-                        const numericValue = parseFloat(cleanedValue);
+            if (key === 'Amount') {
+              // Handle numbers that might have thousand separators (.) and/or decimal commas (,)
+              // e.g., "5.000,50" -> 5000.50
+              const cleanedValue = value.replace(/\./g, '').replace(',', '.');
+              const numericValue = parseFloat(cleanedValue);
 
-                        if (!isNaN(numericValue)) {
-                            displayValue = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(numericValue);
-                        }
-                    }
+              if (!isNaN(numericValue)) {
+                displayValue = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(numericValue);
+              }
+            }
 
-                    return (
-                        <View key={index} className="flex-row justify-between items-center mb-1">
-                            <Text className="text-white/70 text-sm">{translatedKey}</Text>
-                            <Text className="text-white font-medium text-sm text-right">{displayValue}</Text>
-                        </View>
-                    );
-                })}
-            </View>
-        );
+            return (
+              <View key={index} className="flex-row justify-between items-center mb-1">
+                <Text className="text-white/70 text-sm">{translatedKey}</Text>
+                <Text className="text-white font-medium text-sm text-right">{displayValue}</Text>
+              </View>
+            );
+          })}
+        </View>
+      );
     }
-    
+
     if (post.post_type === 'achievement') {
-        return (
-            <View className="bg-white/5 border border-white/10 rounded-lg p-4 my-3">
-                <Text className="text-white font-bold text-base mb-2">{post.title}</Text>
-                <Text className="text-white/80 text-sm leading-5">{post.description}</Text>
-            </View>
-        );
+      return (
+        <View className="bg-white/5 border border-white/10 rounded-lg p-4 my-3">
+          <Text className="text-white font-bold text-base mb-2">{post.title}</Text>
+          <Text className="text-white/80 text-sm leading-5">{post.description}</Text>
+        </View>
+      );
     }
 
     return (
-        <>
-            {post.title && <Text className="text-white font-bold text-lg mb-2">{post.title}</Text>}
-            {post.description && <Text className="text-white text-base leading-6">{post.description}</Text>}
-        </>
+      <>
+        {post.title && <Text className="text-white font-bold text-lg mb-2">{post.title}</Text>}
+        {post.description && <Text className="text-white text-base leading-6">{post.description}</Text>}
+      </>
     );
   };
 
@@ -158,15 +170,17 @@ export default function PostCard({ post }: { post: Post }) {
       </View>
 
       {/* Content */}
-      {renderContent()}
+      <TouchableOpacity onPress={handleNavigate} activeOpacity={isDetailView ? 1 : 0.7} disabled={isDetailView}>
+        {renderContent()}
+      </TouchableOpacity>
 
       {/* Footer */}
       <View className="flex-row items-center mt-4 pt-4 border-t border-white/10">
-        <TouchableOpacity 
-            onPress={() => toggleLike(post.id)} 
-            className="flex-row items-center mr-6" 
-            activeOpacity={0.7}
-            disabled={likingPostId === post.id}
+        <TouchableOpacity
+          onPress={() => toggleLike(post.id)}
+          className="flex-row items-center mr-6"
+          activeOpacity={0.7}
+          disabled={likingPostId === post.id}
         >
           <HeartIcon size={20} filled={post.user_has_liked} />
           <Text className="text-white/60 text-sm ml-2">{post.like_count || 0}</Text>
@@ -176,9 +190,11 @@ export default function PostCard({ post }: { post: Post }) {
           <Text className="text-white/60 text-sm ml-2">{post.comment_count || 0}</Text>
         </TouchableOpacity>
       </View>
-      
+
       {/* Comments Section */}
-      {showComments && <CommentSection postId={post.id} />}
+    <View className='mt-10 '>
+        {showComments && <CommentSection postId={post.id} />}
+    </View>
     </View>
   );
 }

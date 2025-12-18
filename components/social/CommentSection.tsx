@@ -46,50 +46,91 @@ export default function CommentSection({ postId }: { postId: number }) {
         const isEditing = editingComment?.id === comment.id;
 
         return (
-            <View className="flex-row mb-4">
-                <View className="w-9 h-9 rounded-full bg-white/10 mr-3 items-center justify-center overflow-hidden">
-                    {comment.profiles?.avatar_url ? (
-                        <Image source={{ uri: comment.profiles.avatar_url }} className="w-full h-full" resizeMode="cover" />
-                    ) : (
-                        <Text className="text-white text-xs font-bold">{getInitials(comment.profiles?.name || '')}</Text>
-                    )}
+            <View className="flex-col mb-6">
+                {/* Avatar */}
+                <View className="flex-row items-start mb-2">
+
+                    <View className="w-10 h-10 rounded-full bg-white/10 mr-3 items-center justify-center overflow-hidden">
+                        {comment.profiles?.avatar_url ? (
+                            <Image
+                                source={{ uri: comment.profiles.avatar_url }}
+                                className="w-full h-full"
+                                resizeMode="cover"
+                            />
+                        ) : (
+                            <Text className="text-white text-sm font-bold">
+                                {getInitials(comment.profiles?.name || '')}
+                            </Text>
+                        )}
+                    </View>
+
+                    <Text className="text-white font-semibold text-sm mb-1.5">
+                        {comment.profiles?.name}
+                    </Text>
+
                 </View>
+                {/* Comment Content */}
                 <View className="flex-1">
-                    <View className={`bg-white/5 border p-3 rounded-lg ${isOwner ? 'border-purple-500/30' : 'border-transparent'}`}>
-                        <Text className="text-white font-semibold text-sm mb-1">{comment.profiles?.name}</Text>
+                    <View className={`bg-black px-4 py-3 rounded-xl ${isOwner ? 'border border-zinc-900' : ''}`}>
                         {isEditing ? (
                             <TextInput
                                 value={editingComment.content}
                                 onChangeText={(text) => setEditingComment({ ...editingComment, content: text })}
                                 autoFocus
                                 multiline
-                                className="text-white/90 text-base"
-                                placeholderTextColor="#666"
+                                className="text-white text-base leading-5"
+                                placeholderTextColor="#666666"
                             />
                         ) : (
-                            <Text className="text-white/90 text-base leading-5">{comment.content}</Text>
+                            <Text className="text-white/90 text-base leading-5">
+                                {comment.content}
+                            </Text>
                         )}
                     </View>
+
+                    {/* Owner Actions */}
                     {isOwner && (
-                        <View className="flex-row items-center gap-4 mt-2 ml-1">
+                        <View className="flex-row items-center gap-5 mt-4 ml-1">
                             {isEditing ? (
                                 <>
-                                    <TouchableOpacity onPress={handleUpdateComment} activeOpacity={0.7}>
-                                        <Text className="text-purple-400 text-xs font-bold">Salvar</Text>
+                                    <TouchableOpacity
+                                        onPress={handleUpdateComment}
+                                        activeOpacity={0.7}
+                                    >
+                                        <Text className="text-white text-xs font-bold">
+                                            Salvar
+                                        </Text>
                                     </TouchableOpacity>
-                                    <TouchableOpacity onPress={() => setEditingComment(null)} activeOpacity={0.7}>
-                                        <Text className="text-white/50 text-xs">Cancelar</Text>
+                                    <TouchableOpacity
+                                        onPress={() => setEditingComment(null)}
+                                        activeOpacity={0.7}
+                                    >
+                                        <Text className="text-white/40 text-xs">
+                                            Cancelar
+                                        </Text>
                                     </TouchableOpacity>
                                 </>
                             ) : (
                                 <>
-                                    <TouchableOpacity onPress={() => setEditingComment({ id: comment.id, content: comment.content })} className="flex-row items-center gap-1" activeOpacity={0.7}>
+                                    <TouchableOpacity
+                                        onPress={() => setEditingComment({ id: comment.id, content: comment.content })}
+                                        className="flex-row items-center gap-1"
+                                        activeOpacity={0.7}
+                                    >
                                         <EditIcon size={14} />
-                                        <Text className="text-white/60 text-xs">Editar</Text>
+                                        <Text className="text-white/60 text-xs">
+                                            Editar
+                                        </Text>
                                     </TouchableOpacity>
-                                    <TouchableOpacity onPress={() => handleDeleteComment(comment.id)} className="flex-row items-center gap-1" activeOpacity={0.7}>
+                                    <TouchableOpacity
+                                        onPress={() => handleDeleteComment(comment.id)}
+                                        className="flex-row items-center gap-1"
+                                        activeOpacity={0.7}
+                                    >
                                         <TrashIcon size={14} />
-                                        <Text className="text-red-500/80 text-xs">Excluir</Text>
+                                        <Text className="text-red-500 text-xs">
+                                            Excluir
+                                        </Text>
                                     </TouchableOpacity>
                                 </>
                             )}
@@ -101,9 +142,11 @@ export default function CommentSection({ postId }: { postId: number }) {
     };
 
     return (
-        <View className="mt-4 pt-4 border-t border-white/10">
+        <View>
             {loadingComments ? (
-                <View className="py-8 items-center"><ActivityIndicator color="#ffffff" /></View>
+                <View className="py-12 items-center">
+                    <ActivityIndicator size="large" color="#ffffff" />
+                </View>
             ) : (
                 <FlatList
                     data={comments}
@@ -111,25 +154,40 @@ export default function CommentSection({ postId }: { postId: number }) {
                     keyExtractor={(item) => item.id.toString()}
                     scrollEnabled={false}
                     ListEmptyComponent={
-                        <View className="py-8 items-center">
-                            <MessageIconEmptyState size={32} />
-                            <Text className="text-white/40 text-center mt-3">Nenhum comentário ainda.</Text>
+                        <View className="py-12 items-center">
+                            <MessageIconEmptyState size={40} />
+                            <Text className="text-white/40 text-sm text-center mt-4">
+                                Nenhum comentário ainda.
+                            </Text>
+                            <Text className="text-white/30 text-xs text-center mt-1">
+                                Seja o primeiro a comentar!
+                            </Text>
                         </View>
                     }
                 />
             )}
 
-            <View className="flex-row items-center mt-4 gap-2 bg-white/5 border border-white/10 rounded-lg">
+            {/* New Comment Input */}
+            <View className="flex-row items-end mt-6 gap-2 border border-white/20 rounded-lg bg-white/5">
                 <TextInput
                     value={newComment}
                     onChangeText={setNewComment}
                     placeholder="Adicione um comentário..."
-                    placeholderTextColor="#666"
-                    className="flex-1 py-3 px-4 text-white text-base"
+                    placeholderTextColor="#666666"
+                    className="flex-1 py-4 px-4 text-white text-base"
                     multiline
+                    maxLength={500}
                 />
-                <TouchableOpacity onPress={handleAddComment} className="p-3" activeOpacity={0.7} disabled={newComment.trim() === ''}>
-                    <SendIcon size={20} color={newComment.trim() === '' ? '#555' : '#FFF'}/>
+                <TouchableOpacity
+                    onPress={handleAddComment}
+                    className="p-4"
+                    activeOpacity={0.7}
+                    disabled={newComment.trim() === ''}
+                >
+                    <SendIcon
+                        size={22}
+                        color={newComment.trim() === '' ? '#333333' : '#ffffff'}
+                    />
                 </TouchableOpacity>
             </View>
         </View>

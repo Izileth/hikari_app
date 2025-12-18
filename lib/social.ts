@@ -206,3 +206,38 @@ export const deleteComment = async (commentId: number) => {
 
     return { error };
 };
+
+export const getPostById = async (postId: number): Promise<{ data: Post | null, error: Error | null }> => {
+  const { data, error } = await supabase
+    .from('feed_posts')
+    .select(`
+      *,
+      profiles (id, name, nickname, avatar_url),
+      post_likes ( profile_id ),
+      post_comments ( count )
+    `)
+    .eq('id', postId)
+    .single();
+
+  if (error) {
+    console.error('Error fetching post by ID:', error);
+    return { data: null, error: new Error(error.message) };
+  }
+  if (!data) {
+    return { data: null, error: new Error('Post not found') };
+  }
+
+  const like_count = data.post_likes.length;
+  const comment_count = data.post_comments[0]?.count ?? 0;
+
+  const post: Post = {
+    ...data,
+    profiles: Array.isArray(data.profiles) ? data.profiles[0] : data.profiles,
+    post_likes: data.post_likes,
+    like_count: like_count,
+    comment_count: comment_count,
+  };
+
+  // @ts-ignore
+  return { data: post, error: null };
+};
