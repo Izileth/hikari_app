@@ -86,7 +86,7 @@ export default function Index() {
         className="absolute bottom-8"
       >
         <Text className="text-white/20 text-xs">
-          v1.0.0
+          v1.6.1
         </Text>
       </Animated.View>
     </View>

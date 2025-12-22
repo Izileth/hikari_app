@@ -64,31 +64,24 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
   useEffect(() => {
     setLoading(true);
-    
-    supabase.auth.getSession()
-      .then(({ data: { session } }) => {
-        setSession(session);
-        setUser(session?.user ?? null);
-        if (session?.user) {
-          return fetchProfile(session.user);
-        }
-      })
-      .catch(err => {
-        console.error("Error in initial auth load:", err);
-      })
-      .finally(() => {
-        setLoading(false);
-      });
 
     const { data: authListener } = supabase.auth.onAuthStateChange(
-      async (_event, session) => {
+      async (event, session) => {
         setSession(session);
-        setUser(session?.user ?? null);
-        
-        if (session?.user) {
-          await fetchProfile(session.user);
+        const currentUser = session?.user ?? null;
+        setUser(currentUser);
+
+        // Only fetch profile when a user is confirmed
+        if (currentUser) {
+          await fetchProfile(currentUser);
         } else {
           setProfile(null);
+        }
+        
+        // The loading state should be set to false after the initial session is processed.
+        // The INITIAL_SESSION event is triggered only once when the listener is mounted.
+        if (event === 'INITIAL_SESSION' || event === 'SIGNED_OUT') {
+           setLoading(false);
         }
       }
     );
