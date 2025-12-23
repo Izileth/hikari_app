@@ -10,7 +10,46 @@ export type Post = Database['public']['Tables']['feed_posts']['Row'] & {
   user_has_liked?: boolean; // Will be set in the context
 };
 
-export const getFeedPosts = async (): Promise<{ data: Post[] | null, error: Error | null }> => {
+export const getFeedPosts = async (userId?: string): Promise<{ data: Post[] | null, error: Error | null }> => {
+  let targetUserUuid = userId;
+
+  if (!targetUserUuid) {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (user) {
+      targetUserUuid = user.id;
+    } else {
+      return { data: [], error: null };
+    }
+  }
+
+  // Get the integer ID of the target user from the profiles table
+  const { data: profile, error: profileError } = await supabase
+    .from('profiles')
+    .select('id')
+    .eq('user_id', targetUserUuid)
+    .single();
+
+  if (profileError) {
+    console.error('Error fetching profile:', profileError);
+    return { data: null, error: new Error(profileError.message) };
+  }
+
+  const targetProfileId = profile.id;
+
+  // Fetch the integer IDs of users that the target user is following
+  const { data: following, error: followingError } = await supabase
+    .from('followers')
+    .select('following_id')
+    .eq('follower_id', targetProfileId);
+
+  if (followingError) {
+    console.error('Error fetching following users:', followingError);
+    return { data: null, error: new Error(followingError.message) };
+  }
+
+  const followingIds = following.map(f => f.following_id);
+  const userIds = [...followingIds, targetProfileId];
+
   const { data, error } = await supabase
     .from('feed_posts')
     .select(`
@@ -19,6 +58,7 @@ export const getFeedPosts = async (): Promise<{ data: Post[] | null, error: Erro
       post_likes ( profile_id ),
       post_comments ( count )
     `)
+    .in('profile_id', userIds)
     .order('created_at', { ascending: false });
 
   if (error) {
@@ -27,16 +67,13 @@ export const getFeedPosts = async (): Promise<{ data: Post[] | null, error: Erro
   }
 
   const posts = data.map(post => {
-    // The 'post_likes' field will be an array of objects like { profile_id: ... }
     const like_count = post.post_likes.length;
-
-    // The 'post_comments' with '(count)' gives an array with a single object: [{ count: N }]
     const comment_count = post.post_comments[0]?.count ?? 0;
 
     return {
       ...post,
       profiles: Array.isArray(post.profiles) ? post.profiles[0] : post.profiles,
-      post_likes: post.post_likes, // Keep the array of likes
+      post_likes: post.post_likes,
       like_count: like_count,
       comment_count: comment_count,
     };

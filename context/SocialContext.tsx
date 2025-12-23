@@ -26,7 +26,7 @@ interface SocialContextType {
   loadingActivePost: boolean;
   loadingComments: boolean;
   likingPostId: number | null;
-  refreshFeed: () => Promise<void>;
+  refreshFeed: (userId?: string) => Promise<void>;
   fetchPostById: (postId: number) => Promise<void>;
   createPost: (post: { title: string; description: string; post_type?: Database['public']['Enums']['feed_post_type'], shared_data?: any }) => Promise<{ error: Error | null; }>;
   updatePost: (postId: number, updates: { title?: string; description?: string; privacy_level?: Database['public']['Enums']['post_privacy_level']; shared_data?: any }) => Promise<{ error: Error | null; }>;
@@ -50,9 +50,9 @@ export function SocialProvider({ children }: { children: ReactNode }) {
   const [likingPostId, setLikingPostId] = useState<number | null>(null);
   const { profile } = useProfile();
 
-  const refreshFeed = useCallback(async () => {
+  const refreshFeed = useCallback(async (userId?: string) => {
     setLoading(true);
-    const { data, error } = await apiGetFeedPosts();
+    const { data, error } = await apiGetFeedPosts(userId);
     if (data && profile) {
       const processedPosts = data.map(post => ({
         ...post,

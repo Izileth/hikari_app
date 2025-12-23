@@ -8,6 +8,7 @@ import { ImagePickerAsset } from 'expo-image-picker';
 type ProfileData = {
   profile: Tables<'profiles'> | null;
   loading: boolean;
+  profileIsLoading: boolean;
   updateProfile: (updatedInfo: Partial<Tables<'profiles'>>) => Promise<{ error?: Error }>;
   uploadAvatar: (asset: ImagePickerAsset) => Promise<{ error?: Error }>;
   uploadBanner: (asset: ImagePickerAsset) => Promise<{ error?: Error }>;
@@ -16,6 +17,7 @@ type ProfileData = {
 const ProfileContext = createContext<ProfileData>({
   profile: null,
   loading: true,
+  profileIsLoading: true,
   updateProfile: async () => ({}),
   uploadAvatar: async () => ({}),
   uploadBanner: async () => ({}),
@@ -28,18 +30,18 @@ export const useProfile = () => {
 export const ProfileProvider = ({ children }: { children: React.ReactNode }) => {
   const { user, session, profile: initialProfile, refreshProfile } = useAuth();
   const [profile, setProfile] = useState<Tables<'profiles'> | null>(initialProfile);
-  const [loading, setLoading] = useState(true);
+  const [profileIsLoading, setProfileIsLoading] = useState(true);
 
   useEffect(() => {
     setProfile(initialProfile);
-    setLoading(false);
+    setProfileIsLoading(false);
   }, [initialProfile]);
 
   const updateProfile = async (updatedInfo: Partial<Tables<'profiles'>>) => {
     if (!user || !session) {
       return { error: new Error('User not authenticated') };
     }
-    setLoading(true);
+    setProfileIsLoading(true);
     try {
       delete updatedInfo.id;
       delete updatedInfo.email;
@@ -70,14 +72,14 @@ export const ProfileProvider = ({ children }: { children: React.ReactNode }) => 
     } catch (error) {
       return { error: error instanceof Error ? error : new Error(String(error)) };
     } finally {
-      setLoading(false);
+      setProfileIsLoading(false);
     }
   };
 
   const { upload: uploadStorage, loading: storageLoading } = useStorage();
 
   const uploadAvatar = async (asset: ImagePickerAsset) => {
-    setLoading(true);
+    setProfileIsLoading(true);
     try {
       const { publicUrl, error } = await uploadStorage(asset, { bucket: 'avatars' });
 
@@ -97,12 +99,12 @@ export const ProfileProvider = ({ children }: { children: React.ReactNode }) => 
     } catch (error) {
       return { error: error instanceof Error ? error : new Error(String(error)) };
     } finally {
-      setLoading(false);
+      setProfileIsLoading(false);
     }
   };
 
   const uploadBanner = async (asset: ImagePickerAsset) => {
-    setLoading(true);
+    setProfileIsLoading(true);
     try {
       const { publicUrl, error } = await uploadStorage(asset, { bucket: 'banners' });
 
@@ -122,13 +124,14 @@ export const ProfileProvider = ({ children }: { children: React.ReactNode }) => 
     } catch (error) {
       return { error: error instanceof Error ? error : new Error(String(error)) };
     } finally {
-      setLoading(false);
+      setProfileIsLoading(false);
     }
   };
   
   const value = {
     profile,
-    loading: loading || storageLoading,
+    loading: storageLoading,
+    profileIsLoading,
     updateProfile,
     uploadAvatar,
     uploadBanner,
