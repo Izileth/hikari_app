@@ -70,7 +70,7 @@ export default function Register() {
         <View className="flex-1 px-8 mt-20 py-12">
           {/* Back Button */}
           <TouchableOpacity 
-            onPress={() => router.back()}
+            onPress={() => router.replace('/login')}
             className="w-10 h-10 items-center justify-center mb-8"
           >
             <ArrowLeftIcon size={24} />

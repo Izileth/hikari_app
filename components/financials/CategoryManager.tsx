@@ -12,39 +12,39 @@ interface CategoryManagerProps {
 
 // SVG Icons
 const TagIcon = ({ size = 20 }: { size?: number }) => (
-    <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">    <Path d="M20.59 13.41l-7.17 7.17a2 2 0 01-2.83 0L2 12V2h10l8.59 8.59a2 2 0 010 2.82z" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-    <Path d="M7 7h.01" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-  </Svg>
+    <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">    <Path d="M20.59 13.41l-7.17 7.17a2 2 0 01-2.83 0L2 12V2h10l8.59 8.59a2 2 0 010 2.82z" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+        <Path d="M7 7h.01" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+    </Svg>
 );
 
 const PlusIcon = ({ size = 20 }: { size?: number }) => (
-  <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
-    <Path d="M12 5v14M5 12h14" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-  </Svg>
+    <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+        <Path d="M12 5v14M5 12h14" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+    </Svg>
 );
 
 const TrashIcon = ({ size = 20 }: { size?: number }) => (
-  <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
-    <Path d="M3 6h18M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6M8 6V4a2 2 0 012-2h4a2 2 0 012 2v2M10 11v6M14 11v6" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-  </Svg>
+    <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+        <Path d="M3 6h18M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6M8 6V4a2 2 0 012-2h4a2 2 0 012 2v2M10 11v6M14 11v6" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+    </Svg>
 );
 
 const ArrowUpIcon = ({ size = 16 }: { size?: number }) => (
-  <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
-    <Path d="M12 19V5M5 12l7-7 7 7" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-  </Svg>
+    <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+        <Path d="M12 19V5M5 12l7-7 7 7" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+    </Svg>
 );
 
 const ArrowDownIcon = ({ size = 16 }: { size?: number }) => (
-  <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
-    <Path d="M12 5v14M19 12l-7 7-7-7" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-  </Svg>
+    <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+        <Path d="M12 5v14M19 12l-7 7-7-7" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+    </Svg>
 );
 
 const GlobeIcon = ({ size = 16 }: { size?: number }) => (
-  <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
-    <Path d="M12 2a10 10 0 100 20 10 10 0 000-20zM2 12h20M12 2a15.3 15.3 0 014 10 15.3 15.3 0 01-4 10 15.3 15.3 0 01-4-10 15.3 15.3 0 014-10z" stroke="white" strokeWidth="2" strokeLinecap="round"/>
-  </Svg>
+    <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+        <Path d="M12 2a10 10 0 100 20 10 10 0 000-20zM2 12h20M12 2a15.3 15.3 0 014 10 15.3 15.3 0 01-4 10 15.3 15.3 0 01-4-10 15.3 15.3 0 014-10z" stroke="white" strokeWidth="2" strokeLinecap="round" />
+    </Svg>
 );
 
 const categoryTypes = [
@@ -139,8 +139,8 @@ const CategoryManager: React.FC<CategoryManagerProps> = ({ onClose, showCloseBut
     };
 
     const renderCategoryItem = ({ item }: { item: Category }) => (
-        <TouchableOpacity 
-            onPress={() => handleSelectCategory(item)} 
+        <TouchableOpacity
+            onPress={() => handleSelectCategory(item)}
             className="border border-white/20 rounded-lg p-4 mb-3"
             activeOpacity={0.7}
         >
@@ -215,8 +215,8 @@ const CategoryManager: React.FC<CategoryManagerProps> = ({ onClose, showCloseBut
                     </View>
 
                     {/* Action Buttons */}
-                    <TouchableOpacity 
-                        onPress={handleSave} 
+                    <TouchableOpacity
+                        onPress={handleSave}
                         className="bg-white rounded-lg py-4 mb-3 flex-row items-center justify-center"
                     >
                         <PlusIcon size={20} />
@@ -227,8 +227,8 @@ const CategoryManager: React.FC<CategoryManagerProps> = ({ onClose, showCloseBut
 
                     {isEditing && (
                         <View className="flex-row gap-3">
-                            <TouchableOpacity 
-                                onPress={handleDelete} 
+                            <TouchableOpacity
+                                onPress={handleDelete}
                                 className="flex-1 border border-white/20 rounded-lg py-4 flex-row items-center justify-center"
                             >
                                 <TrashIcon size={18} />
@@ -236,8 +236,8 @@ const CategoryManager: React.FC<CategoryManagerProps> = ({ onClose, showCloseBut
                                     Excluir
                                 </Text>
                             </TouchableOpacity>
-                            <TouchableOpacity 
-                                onPress={clearForm} 
+                            <TouchableOpacity
+                                onPress={clearForm}
                                 className="flex-1 border border-white/20 rounded-lg py-4"
                             >
                                 <Text className="text-white text-center font-bold">
@@ -273,8 +273,8 @@ const CategoryManager: React.FC<CategoryManagerProps> = ({ onClose, showCloseBut
 
                 {/* Close Button */}
                 {showCloseButton && (
-                    <TouchableOpacity 
-                        onPress={onClose} 
+                    <TouchableOpacity
+                        onPress={onClose}
                         className="border border-white/20 rounded-lg py-4"
                     >
                         <Text className="text-white text-center font-medium">

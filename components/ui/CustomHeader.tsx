@@ -97,7 +97,7 @@ export default function CustomHeader() {
                 {/* Right Side - Action Button & Profile */}
                 <View className="flex-row items-center gap-3">
                     <TouchableOpacity
-                        onPress={() => handleNavigation('/(tabs)/create-post')}
+                        onPress={() => router.push('/(tabs)/create-post')}
                         activeOpacity={0.7}
                         className="p-1"
                     >

@@ -127,20 +127,46 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   };
 
   const signUp = async (name: string, email: string, password: string) => {
-    // Note: The profile is now created by a trigger in Supabase when a new auth.user is created.
-    // The trigger reads the 'name' from the metadata.
-    const { error } = await supabase.auth.signUp({
+    // Step 1: Create the user in the authentication schema
+    const { data: authData, error: authError } = await supabase.auth.signUp({
       email,
       password,
+      // We pass the name in the options metadata
       options: {
         data: {
           name: name,
-          // You can add other metadata here if needed by your trigger
         },
       },
     });
-    // The onAuthStateChange listener will handle fetching the profile automatically.
-    return { error: error || undefined };
+
+    if (authError) {
+      return { error: authError };
+    }
+
+    if (!authData.user) {
+      return { error: new Error("User was not created in the authentication system.") };
+    }
+
+    // Step 2: Insert the corresponding profile into the public.profiles table
+    // The `user_id` comes from the auth user we just created.
+    // The `name` can be taken from the input directly.
+    // The `slug` is handled by a trigger on the profiles table.
+    // The `password` column is nullable and not needed.
+    const { error: profileError } = await supabase.from('profiles').insert({
+        user_id: authData.user.id,
+        email: email,
+        name: name,
+    });
+    
+    if (profileError) {
+      // This is a critical error. The auth user exists, but the profile creation failed.
+      // The user will be in a broken state.
+      console.error("CRITICAL: Auth user created, but profile creation failed:", profileError);
+      return { error: new Error(`Database Error Saving New User: ${profileError.message}`) };
+    }
+
+    // Both steps succeeded. The onAuthStateChange listener will now handle setting the session and profile.
+    return {};
   };
 
   const signOut = async () => {

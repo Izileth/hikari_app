@@ -84,29 +84,47 @@ export const getFeedPosts = async (userId?: string): Promise<{ data: Post[] | nu
 };
 
 export const getPublicFeedPosts = async (): Promise<{ data: Post[] | null, error: Error | null }> => {
-  const { data, error } = await supabase
+  // First, fetch all public posts.
+  const { data: postsData, error: postsError } = await supabase
     .from('feed_posts')
-    .select(`
-      *,
-      profiles (id, name, nickname, avatar_url),
-      post_likes ( profile_id ),
-      post_comments ( count )
-    `)
+    .select(`*, post_likes ( profile_id ), post_comments ( count )`)
     .eq('privacy_level', 'public')
     .order('created_at', { ascending: false });
 
-  if (error) {
-    console.error('Error fetching public feed posts:', error);
-    return { data: null, error: new Error(error.message) };
+  if (postsError) {
+    console.error('Error fetching public feed posts:', postsError);
+    return { data: null, error: new Error(postsError.message) };
   }
 
-  const posts = data.map(post => {
+  if (!postsData) {
+    return { data: [], error: null };
+  }
+
+  // Then, fetch the profile information for all post authors.
+  // This is done in a separate query to ensure RLS on `profiles` is correctly applied.
+  // If profile data is still missing, the RLS policy on the `profiles` table might be too restrictive.
+  const profileIds = [...new Set(postsData.map(p => p.profile_id))];
+  const { data: profilesData, error: profilesError } = await supabase
+    .from('profiles')
+    .select('id, name, nickname, avatar_url')
+    .in('id', profileIds);
+
+  if (profilesError) {
+    // Log the error but don't block the feed from loading.
+    console.error('Error fetching profiles for public posts:', profilesError);
+  }
+
+  const profilesMap = new Map(profilesData?.map(p => [p.id, p]));
+
+  // Manually join posts with their author's profile data.
+  const posts = postsData.map(post => {
     const like_count = post.post_likes.length;
     const comment_count = post.post_comments[0]?.count ?? 0;
+    const profile = profilesMap.get(post.profile_id) || null;
 
     return {
       ...post,
-      profiles: Array.isArray(post.profiles) ? post.profiles[0] : post.profiles,
+      profiles: profile,
       post_likes: post.post_likes,
       like_count: like_count,
       comment_count: comment_count,
@@ -125,7 +143,7 @@ export const createPost = async (post: {
     post_type?: Database['public']['Enums']['feed_post_type'];
     shared_data?: any;
 }) => {
-    const { data, error } = await supabase
+    const { error } = await supabase
         .from('feed_posts')
         .insert([post])
         .select();

@@ -71,7 +71,7 @@ export default function CommentSection({ postId }: { postId: number }) {
                 </View>
                 {/* Comment Content */}
                 <View className="flex-1">
-                    <View className={`bg-black px-4 py-3 rounded-xl ${isOwner ? 'border border-zinc-900' : ''}`}>
+                    <View className={`bg-black px-4 py-3  ${isOwner ? ' border-l-4 border-white/20' : ''}`}>
                         {isEditing ? (
                             <TextInput
                                 value={editingComment.content}
@@ -79,7 +79,7 @@ export default function CommentSection({ postId }: { postId: number }) {
                                 autoFocus
                                 multiline
                                 className="text-white text-base leading-5"
-                                placeholderTextColor="#666666"
+                                placeholderTextColor="#000"
                             />
                         ) : (
                             <Text className="text-white/90 text-base leading-5">
@@ -168,7 +168,7 @@ export default function CommentSection({ postId }: { postId: number }) {
             )}
 
             {/* New Comment Input */}
-            <View className="flex-row items-end mt-6 gap-2 border border-white/20 rounded-lg bg-white/5">
+            <View className="flex-row items-end mt-6 gap-2 border border-white/20 rounded-lg bg-black">
                 <TextInput
                     value={newComment}
                     onChangeText={setNewComment}

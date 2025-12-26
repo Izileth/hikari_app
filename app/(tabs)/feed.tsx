@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { StyleSheet, FlatList, ActivityIndicator, View, TouchableOpacity, Text } from 'react-native';
+import { FlatList, ActivityIndicator, View, TouchableOpacity, Text } from 'react-native';
 import { useSocial } from '@/context/SocialContext';
 import PostCard from '@/components/social/PostCard';
 import CustomHeader from '@/components/ui/CustomHeader';
@@ -17,9 +17,9 @@ export default function FeedScreen() {
 
     if (isLoading && !data.length) {
       return (
-        <View style={styles.centered}>
+        <View className="flex-1 px-0 justify-center items-center">
           <ActivityIndicator size="large" color="#FFFFFF" />
-          <Text style={styles.loadingText}>Carregando feed...</Text>
+          <Text className="text-white/40 text-sm mt-4">Carregando feed...</Text>
         </View>
       );
     }
@@ -29,15 +29,17 @@ export default function FeedScreen() {
         data={data}
         renderItem={({ item }) => <PostCard post={item} />}
         keyExtractor={(item) => item.id.toString()}
-        contentContainerStyle={styles.listContent}
+        contentContainerStyle={{ flexGrow: 1 }}
         showsVerticalScrollIndicator={false}
         ListEmptyComponent={
           !isLoading ? (
-            <View style={styles.emptyState}>
-              <MessageIconEmptyState size={48}/>
-              <Text style={styles.emptyTitle}>Nenhuma postagem ainda</Text>
-              <Text style={styles.emptyDescription}>
-                {feedType === 'personal' 
+            <View className="flex-1 justify-center items-center py-20 px-4">
+              <MessageIconEmptyState size={48} />
+              <Text className="text-white text-base font-semibold mt-4 mb-2">
+                Nenhuma postagem ainda
+              </Text>
+              <Text className="text-white/40 text-sm text-center leading-5">
+                {feedType === 'personal'
                   ? 'Comece seguindo pessoas ou crie sua primeira postagem!'
                   : 'Seja o primeiro a compartilhar algo público!'}
               </Text>
@@ -49,105 +51,41 @@ export default function FeedScreen() {
   }
 
   return (
-    <View style={styles.container}>
+    <View className="flex-1 px-0 w-full bg-black">
       <CustomHeader />
-      
-      <View style={styles.segmentControl}>
-        <View style={styles.segmentWrapper}>
-          <TouchableOpacity 
-            style={[styles.segmentButton, feedType === 'personal' && styles.segmentButtonActive]} 
+
+      <View className="flex-1 w-full px-0">
+        {renderContent()}
+      </View>
+
+      <View className="px-0 py-2 border-t h-28 border-black/10">
+        <View className="flex-row px-0  bg-black rounded-lg p-1">
+          <TouchableOpacity
+            className={`flex-1 py-2 px-5 rounded-md items-center ${feedType === 'personal' ? 'border-b  border-white' : ''
+              }`}
             onPress={() => setFeedType('personal')}
             activeOpacity={0.7}
           >
-            <Text style={[styles.segmentButtonText, feedType === 'personal' && styles.segmentButtonTextActive]}>
+            <Text className={`text-sm font-bold ${feedType === 'personal' ? 'text-white' : 'text-white/60'
+              }`}>
               Pessoal
             </Text>
           </TouchableOpacity>
-          
-          <TouchableOpacity 
-            style={[styles.segmentButton, feedType === 'public' && styles.segmentButtonActive]} 
+
+          <TouchableOpacity
+            className={`flex-1 py-2 px-5 rounded-md items-center ${feedType === 'public' ? 'border-b border-white' : ''
+              }`}
             onPress={() => setFeedType('public')}
             activeOpacity={0.7}
           >
-            <Text style={[styles.segmentButtonText, feedType === 'public' && styles.segmentButtonTextActive]}>
+            <Text className={`text-sm font-bold ${feedType === 'public' ? 'text-white' : 'text-white/60'
+              }`}>
               Público
             </Text>
           </TouchableOpacity>
         </View>
       </View>
-      
-      {renderContent()}
+
     </View>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#000',
-  },
-  centered: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  loadingText: {
-    color: 'rgba(255, 255, 255, 0.4)',
-    fontSize: 14,
-    marginTop: 16,
-  },
-  listContent: {
-    padding: 16,
-    flexGrow: 1,
-  },
-  segmentControl: {
-    paddingHorizontal: 16,
-    paddingVertical: 16,
-    borderBottomWidth: 1,
-    borderBottomColor: 'rgba(255, 255, 255, 0.1)',
-  },
-  segmentWrapper: {
-    flexDirection: 'row',
-    backgroundColor: 'rgba(255, 255, 255, 0.05)',
-    borderRadius: 8,
-    padding: 4,
-  },
-  segmentButton: {
-    flex: 1,
-    paddingVertical: 12,
-    paddingHorizontal: 20,
-    borderRadius: 6,
-    alignItems: 'center',
-  },
-  segmentButtonActive: {
-    backgroundColor: '#FFFFFF',
-  },
-  segmentButtonText: {
-    color: 'rgba(255, 255, 255, 0.6)',
-    fontSize: 14,
-    fontWeight: 'bold',
-  },
-  segmentButtonTextActive: {
-    color: '#000000',
-  },
-  emptyState: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    paddingVertical: 80,
-    paddingHorizontal: 32,
-  },
-  emptyTitle: {
-    color: '#FFFFFF',
-    fontSize: 16,
-    fontWeight: '600',
-    marginTop: 16,
-    marginBottom: 8,
-  },
-  emptyDescription: {
-    color: 'rgba(255, 255, 255, 0.4)',
-    fontSize: 14,
-    textAlign: 'center',
-    lineHeight: 20,
-  },
-});

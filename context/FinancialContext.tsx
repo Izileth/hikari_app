@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import React, { createContext, useContext, useState, useEffect, useCallback, ReactNode } from 'react';
 import { supabase } from '../lib/supabase';
 import { useAuth } from './AuthContext';
 import { Database } from '../lib/database.types';
@@ -65,7 +65,7 @@ interface FinancialContextType {
     transactions: Transaction[];
     categories: Category[];
     budgets: Budget[];
-    financialTargets: FinancialTarget[]; // New
+    financialTargets: FinancialTarget[];
     loading: boolean;
     error: Error | null;
     refetch: () => void;
@@ -78,7 +78,6 @@ interface FinancialContextType {
     addCategory: (category: CategoryInsert) => Promise<any>;
     updateCategory: (id: number, updates: CategoryUpdate) => Promise<any>;
     deleteCategory: (id: number) => Promise<any>;
-    // New CRUD for targets
     addFinancialTarget: (target: FinancialTargetInsert) => Promise<any>;
     updateFinancialTarget: (id: number, updates: FinancialTargetUpdate) => Promise<any>;
     deleteFinancialTarget: (id: number) => Promise<any>;
@@ -93,11 +92,11 @@ export const FinancialProvider = ({ children }: { children: ReactNode }) => {
     const [transactions, setTransactions] = useState<Transaction[]>([]);
     const [categories, setCategories] = useState<Category[]>([]);
     const [budgets, setBudgets] = useState<Budget[]>([]);
-    const [financialTargets, setFinancialTargets] = useState<FinancialTarget[]>([]); // New state
+    const [financialTargets, setFinancialTargets] = useState<FinancialTarget[]>([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<Error | null>(null);
 
-    const fetchData = async () => {
+    const fetchData = useCallback(async () => {
         if (!profile?.id) {
             setLoading(false);
             return;
@@ -112,26 +111,26 @@ export const FinancialProvider = ({ children }: { children: ReactNode }) => {
                 transactionsRes,
                 categoriesRes,
                 budgetsRes,
-                targetsRes // New fetch
+                targetsRes
             ] = await Promise.all([
                 supabase.from('accounts').select('*').or(`profile_id.eq.${profile.id},is_public.eq.true`),
                 supabase.from('transactions').select('*').eq('profile_id', profile.id).order('transaction_date', { ascending: false }),
                 supabase.from('transaction_categories').select('*').or(`profile_id.eq.${profile.id},is_public.eq.true`),
                 supabase.from('budgets').select('*').eq('profile_id', profile.id),
-                supabase.from('user_financial_targets').select('*').eq('profile_id', profile.id) // New fetch
+                supabase.from('user_financial_targets').select('*').eq('profile_id', profile.id)
             ]);
 
             if (accountsRes.error) throw accountsRes.error;
             if (transactionsRes.error) throw transactionsRes.error;
             if (categoriesRes.error) throw categoriesRes.error;
             if (budgetsRes.error) throw budgetsRes.error;
-            if (targetsRes.error) throw targetsRes.error; // New error check
+            if (targetsRes.error) throw targetsRes.error;
 
             setAccounts(accountsRes.data || []);
             setTransactions(transactionsRes.data || []);
             setCategories(categoriesRes.data || []);
             setBudgets(budgetsRes.data || []);
-            setFinancialTargets(targetsRes.data || []); // New state update
+            setFinancialTargets(targetsRes.data || []);
 
         } catch (e: any) {
             setError(e);
@@ -139,7 +138,7 @@ export const FinancialProvider = ({ children }: { children: ReactNode }) => {
         } finally {
             setLoading(false);
         }
-    };
+    }, [profile?.id]);
 
     useEffect(() => {
         if (profile?.id) {
@@ -149,9 +148,10 @@ export const FinancialProvider = ({ children }: { children: ReactNode }) => {
             setTransactions([]);
             setCategories([]);
             setBudgets([]);
-            setFinancialTargets([]); // Reset new state
+            setFinancialTargets([]);
+            setLoading(false);
         }
-    }, [profile]);
+    }, [profile?.id, fetchData]);
 
     const refetch = () => {
         fetchData();
@@ -254,7 +254,7 @@ export const FinancialProvider = ({ children }: { children: ReactNode }) => {
         transactions,
         categories,
         budgets,
-        financialTargets, // New
+        financialTargets,
         loading,
         error,
         refetch,
@@ -267,9 +267,9 @@ export const FinancialProvider = ({ children }: { children: ReactNode }) => {
         addCategory,
         updateCategory,
         deleteCategory,
-        addFinancialTarget, // New
-        updateFinancialTarget, // New
-        deleteFinancialTarget, // New
+        addFinancialTarget,
+        updateFinancialTarget,
+        deleteFinancialTarget,
     };
 
     return (

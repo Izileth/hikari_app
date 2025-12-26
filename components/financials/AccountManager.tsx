@@ -1,5 +1,5 @@
 import React, { useState, useMemo, useEffect } from 'react';
-import { View, Text, TextInput, TouchableOpacity, Alert, FlatList, ScrollView, Switch, Platform } from 'react-native';
+import { View, Text, TextInput, TouchableOpacity, Alert, FlatList, ScrollView, Switch } from 'react-native';
 import { useFinancials, Account, AccountInsert, AccountUpdate } from '../../context/FinancialContext';
 import { useAuth } from '../../context/AuthContext';
 import { CustomPicker } from '../ui/CustomPicker';
