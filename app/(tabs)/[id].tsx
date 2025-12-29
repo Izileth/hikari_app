@@ -1,6 +1,6 @@
 import React, { useEffect, useCallback } from 'react';
 import { View, ActivityIndicator, ScrollView, Text, Alert, RefreshControl } from 'react-native';
-import { useLocalSearchParams, Stack } from 'expo-router';
+import { useLocalSearchParams } from 'expo-router';
 import { useSocial } from '@/context/SocialContext';
 import PostCard from '@/components/social/PostCard';
 import CustomHeader from '@/components/ui/CustomHeader';
