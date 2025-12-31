@@ -4,6 +4,7 @@ import { useSocial } from '@/context/SocialContext';
 import { useProfile } from '@/context/ProfileContext';
 import { Comment } from '@/lib/social';
 import { EditIcon, TrashIcon, SendIcon, MessageIconEmptyState } from '../ui/Icons';
+import { useToast } from '@/context/ToastContext';
 
 const getInitials = (name: string) => {
     if (!name) return '?';
@@ -13,15 +14,24 @@ const getInitials = (name: string) => {
 };
 
 export default function CommentSection({ postId }: { postId: number }) {
-    const { comments, loadingComments, addComment, updateComment, deleteComment } = useSocial();
+    const { comments, addComment, updateComment, deleteComment } = useSocial();
     const { profile } = useProfile();
+    const { showToast } = useToast();
     const [newComment, setNewComment] = useState('');
     const [editingComment, setEditingComment] = useState<{ id: number, content: string } | null>(null);
 
     const handleAddComment = async () => {
-        if (newComment.trim() === '') return;
-        await addComment(postId, newComment);
-        setNewComment('');
+        if (newComment.trim() === '') {
+            showToast('O comentário não pode ser vazio.', 'error');
+            return;
+        }
+        try {
+            await addComment(postId, newComment);
+            setNewComment('');
+            showToast('Comentário adicionado com sucesso!', 'success');
+        } catch (error: any) {
+            showToast(`Erro ao adicionar comentário: ${error.message}`, 'error');
+        }
     };
 
     const handleDeleteComment = (commentId: number) => {
@@ -30,15 +40,32 @@ export default function CommentSection({ postId }: { postId: number }) {
             "Tem certeza que deseja excluir este comentário?",
             [
                 { text: "Cancelar", style: "cancel" },
-                { text: "Excluir", style: "destructive", onPress: () => deleteComment(commentId) }
+                {
+                    text: "Excluir", style: "destructive", onPress: async () => {
+                        try {
+                            await deleteComment(commentId);
+                            showToast('Comentário excluído com sucesso!', 'success');
+                        } catch (error: any) {
+                            showToast(`Erro ao excluir comentário: ${error.message}`, 'error');
+                        }
+                    }
+                }
             ]
         );
     };
 
-    const handleUpdateComment = () => {
-        if (!editingComment || editingComment.content.trim() === '') return;
-        updateComment(editingComment.id, editingComment.content);
-        setEditingComment(null);
+    const handleUpdateComment = async () => {
+        if (!editingComment || editingComment.content.trim() === '') {
+            showToast('O comentário não pode ser vazio.', 'error');
+            return;
+        }
+        try {
+            await updateComment(editingComment.id, editingComment.content);
+            setEditingComment(null);
+            showToast('Comentário atualizado com sucesso!', 'success');
+        } catch (error: any) {
+            showToast(`Erro ao atualizar comentário: ${error.message}`, 'error');
+        }
     };
 
     const renderComment = ({ item: comment }: { item: Comment }) => {
@@ -143,29 +170,23 @@ export default function CommentSection({ postId }: { postId: number }) {
 
     return (
         <View>
-            {loadingComments ? (
-                <View className="py-12 items-center">
-                    <ActivityIndicator size="large" color="#ffffff" />
-                </View>
-            ) : (
-                <FlatList
-                    data={comments}
-                    renderItem={renderComment}
-                    keyExtractor={(item) => item.id.toString()}
-                    scrollEnabled={false}
-                    ListEmptyComponent={
-                        <View className="py-12 items-center">
-                            <MessageIconEmptyState size={40} />
-                            <Text className="text-white/40 text-sm text-center mt-4">
-                                Nenhum comentário ainda.
-                            </Text>
-                            <Text className="text-white/30 text-xs text-center mt-1">
-                                Seja o primeiro a comentar!
-                            </Text>
-                        </View>
-                    }
-                />
-            )}
+            <FlatList
+                data={comments}
+                renderItem={renderComment}
+                keyExtractor={(item) => item.id.toString()}
+                scrollEnabled={false}
+                ListEmptyComponent={
+                    <View className="py-12 items-center">
+                        <MessageIconEmptyState size={40} />
+                        <Text className="text-white/40 text-sm text-center mt-4">
+                            Nenhum comentário ainda.
+                        </Text>
+                        <Text className="text-white/30 text-xs text-center mt-1">
+                            Seja o primeiro a comentar!
+                        </Text>
+                    </View>
+                }
+            />
 
             {/* New Comment Input */}
             <View className="flex-row items-end mt-6 gap-2 border border-white/20 rounded-lg bg-black">

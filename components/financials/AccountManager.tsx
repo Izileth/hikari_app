@@ -2,6 +2,7 @@ import React, { useState, useMemo, useEffect } from 'react';
 import { View, Text, TextInput, TouchableOpacity, Alert, FlatList, ScrollView, Switch } from 'react-native';
 import { useFinancials, Account, AccountInsert, AccountUpdate } from '../../context/FinancialContext';
 import { useAuth } from '../../context/AuthContext';
+import { useToast } from '@/context/ToastContext';
 import { CustomPicker } from '../ui/CustomPicker';
 import Svg, { Path, Circle } from 'react-native-svg';
 
@@ -54,6 +55,7 @@ const accountTypes = [
 const AccountManager: React.FC<AccountManagerProps> = ({ onClose, showCloseButton = true }) => {
     const { accounts, addAccount, updateAccount, deleteAccount } = useFinancials();
     const { profile } = useAuth();
+    const { showToast } = useToast();
 
     const [isEditing, setIsEditing] = useState<Account | null>(null);
     const [name, setName] = useState('');
@@ -95,12 +97,12 @@ const AccountManager: React.FC<AccountManagerProps> = ({ onClose, showCloseButto
 
     const handleSave = async () => {
         if (!name || !initialBalance) {
-            Alert.alert('Atenção', 'Nome e Saldo Inicial são obrigatórios');
+            showToast('Nome e Saldo Inicial são obrigatórios', 'error');
             return;
         }
         const numericBalance = parseFloat(initialBalance.replace(',', '.'));
         if (isNaN(numericBalance)) {
-            Alert.alert('Erro', 'O saldo inicial deve ser um número válido');
+            showToast('O saldo inicial deve ser um número válido', 'error');
             return;
         }
 
@@ -115,9 +117,10 @@ const AccountManager: React.FC<AccountManagerProps> = ({ onClose, showCloseButto
                     is_corporate: isCorporate
                 };
                 await updateAccount(isEditing.id, accountData);
+                showToast('Conta atualizada com sucesso!', 'success');
             } else {
                 if (!profile?.id) {
-                    Alert.alert('Erro', 'Usuário não autenticado para criar conta');
+                    showToast('Usuário não autenticado para criar conta', 'error');
                     return;
                 }
                 const accountData: AccountInsert = {
@@ -132,12 +135,13 @@ const AccountManager: React.FC<AccountManagerProps> = ({ onClose, showCloseButto
                 if (newAccount && newAccount.length > 0) {
                     setIsEditing(newAccount[0]);
                 }
+                showToast('Conta criada com sucesso!', 'success');
             }
             if (isEditing) {
                 clearForm();
             }
         } catch (error: any) {
-            Alert.alert('Erro ao Salvar', error.message);
+            showToast(error.message, 'error');
         }
     };
 
@@ -155,9 +159,10 @@ const AccountManager: React.FC<AccountManagerProps> = ({ onClose, showCloseButto
                     onPress: async () => {
                         try {
                             await deleteAccount(isEditing.id);
+                            showToast('Conta excluída com sucesso!', 'success');
                             clearForm();
                         } catch (error: any) {
-                            Alert.alert('Erro ao Excluir', error.message);
+                            showToast(error.message, 'error');
                         }
                     },
                 },

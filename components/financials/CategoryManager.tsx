@@ -96,9 +96,10 @@ const CategoryManager: React.FC<CategoryManagerProps> = ({ onClose, showCloseBut
             if (isEditing) {
                 const categoryData: CategoryUpdate = { name, type, is_public: isPublic };
                 await updateCategory(isEditing.id, categoryData);
+                showToast('Categoria atualizada com sucesso!', 'success');
             } else {
                 if (!profile?.id) {
-                    Alert.alert('Erro', 'Usuário não autenticado para criar categoria');
+                    showToast('Usuário não autenticado para criar categoria', 'error');
                     return;
                 }
                 const categoryData: CategoryInsert = { name, type, is_public: isPublic };
@@ -106,6 +107,7 @@ const CategoryManager: React.FC<CategoryManagerProps> = ({ onClose, showCloseBut
                 if (newCategory && newCategory.length > 0) {
                     setIsEditing(newCategory[0]);
                 }
+                showToast('Categoria criada com sucesso!', 'success');
             }
             if (isEditing) {
                 clearForm();
@@ -129,9 +131,10 @@ const CategoryManager: React.FC<CategoryManagerProps> = ({ onClose, showCloseBut
                     onPress: async () => {
                         try {
                             await deleteCategory(isEditing.id);
+                            showToast('Categoria excluída com sucesso!', 'success');
                             clearForm();
                         } catch (error: any) {
-                            Alert.alert('Erro ao Excluir', error.message);
+                            showToast(error.message, 'error');
                         }
                     },
                 },

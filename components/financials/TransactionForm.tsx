@@ -3,6 +3,7 @@ import { View, Text, TextInput, TouchableOpacity, Alert, ScrollView, Switch } fr
 import { useFinancials, Transaction, TransactionInsert } from '../../context/FinancialContext';
 import { CustomPicker } from '../ui/CustomPicker';
 import Svg, { Path } from 'react-native-svg';
+import { useToast } from '@/context/ToastContext';
 
 interface TransactionFormProps {
     transaction?: Transaction | null;
@@ -25,6 +26,7 @@ const ArrowDownIcon = ({ size = 20 }: { size?: number }) => (
 
 const TransactionForm: React.FC<TransactionFormProps> = ({ transaction, onSave, onClose }) => {
     const { accounts, categories, addTransaction, updateTransaction } = useFinancials();
+    const { showToast } = useToast();
     const [isEditing, setIsEditing] = useState(false);
 
     // Form state
@@ -67,13 +69,13 @@ const TransactionForm: React.FC<TransactionFormProps> = ({ transaction, onSave, 
 
     const handleSave = async () => {
         if (!title || !amount || !accountId) {
-            Alert.alert('Atenção', 'Título, Valor e Conta são campos obrigatórios');
+            showToast('Título, Valor e Conta são campos obrigatórios', 'error');
             return;
         }
 
         const numericAmount = parseFloat(amount.replace(',', '.'));
         if (isNaN(numericAmount)) {
-            Alert.alert('Erro', 'O valor deve ser um número válido');
+            showToast('O valor deve ser um número válido', 'error');
             return;
         }
 
@@ -93,12 +95,14 @@ const TransactionForm: React.FC<TransactionFormProps> = ({ transaction, onSave, 
         try {
             if (isEditing && transaction) {
                 await updateTransaction(transaction.id, transactionData);
+                showToast('Transação atualizada com sucesso!', 'success');
             } else {
                 await addTransaction(transactionData as TransactionInsert);
+                showToast('Transação criada com sucesso!', 'success');
             }
             onSave();
         } catch (error: any) {
-            Alert.alert('Erro ao Salvar', error.message);
+            showToast(error.message, 'error');
         }
     };
 
